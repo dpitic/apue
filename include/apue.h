@@ -24,7 +24,8 @@
 /*
  * Prototypes for custom functions used in the book.
  */
- void err_quit(const char *, ...); __attribute__((noreturn));
- void err_sys(const char *, ...); __attribute__((noreturn));
+ void err_quit(const char *, ...) __attribute__((noreturn));
+ void err_sys(const char *, ...) __attribute__((noreturn));
+ void err_ret(const char *, ...);
 
  #endif /* _APUE_H */

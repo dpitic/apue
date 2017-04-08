@@ -1,3 +1,9 @@
+/*
+ * This program is used to list the names of all the files in a directory that
+ * is provided as the argument. It is similar to the ls(1) command, but this is
+ * a very basic implementation with limited functionality.
+ */
+
 #include "apue.h"
 #include <dirent.h>
 
