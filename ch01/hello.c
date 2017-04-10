@@ -1,7 +1,7 @@
 /*
  * This program prints its process ID (PID).
  */
- #include "apue.h"
+#include "apue.h"
 
  int main(void)
  {
