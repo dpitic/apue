@@ -24,6 +24,9 @@
 /*
  * Prototypes for custom functions used in the book.
  */
+ char *path_alloc(size_t *);                        /* pathalloc.c */
+ long open_max(void);                               /* openmax.c */
+
  void err_quit(const char *, ...) __attribute__((noreturn));
  void err_sys(const char *, ...) __attribute__((noreturn));
  void err_ret(const char *, ...);
