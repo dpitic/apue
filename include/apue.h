@@ -22,6 +22,11 @@
 #define MAXLINE 4096        /* maximum line length */
 
 /*
+ * Default file access permissions for new file.
+ */
+#define FILE_MODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
+
+/*
  * Prototypes for custom functions used in the book.
  */
  char *path_alloc(size_t *);                        /* pathalloc.c */

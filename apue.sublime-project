@@ -7,10 +7,14 @@
 	],
 	"settings":
 	{
-		"ecc_common_flags": [
-			"-I$project_base_path/include",
-			"-I/usr/include"
-		],
+//		
+// Replace include definitions with .clang_complete file for compatibility with
+// Vim and Atom.		
+//		"ecc_common_flags": [
+//			"-I$project_base_path/include"
+//			"-I/usr/include"
+//		],
+//
 		"easy_clang_complete_verbose": true
 	}
 }
