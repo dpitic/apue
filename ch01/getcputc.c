@@ -5,21 +5,21 @@
  * Using standard library I/O functions relieves us from having to choose
  * optimal buffer sizes.
  */
- #include "apue.h"
- 
- int main(void)
- {
-     int        c;      /* character read and to be written */
+#include "apue.h"
 
-     while ((c = getc(stdin)) != EOF) {
-         if (putc(c, stdout) == EOF) {
-             err_sys("output error");
-         }
-     }
+int main(void)
+{
+    int        c;      /* character read and to be written */
 
-     if (ferror(stdin)) {
-         err_sys("input error");
-     }
+    while ((c = getc(stdin)) != EOF) {
+        if (putc(c, stdout) == EOF) {
+            err_sys("output error");
+        }
+    }
 
-     exit(0);
- }
+    if (ferror(stdin)) {
+        err_sys("input error");
+    }
+
+    exit(0);
+}

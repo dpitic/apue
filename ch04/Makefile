@@ -8,7 +8,7 @@ else
 	ZAP =
 endif
 
-PROGS = filetype
+PROGS = filetype access
 MOREPROGS =
 
 all:	$(PROGS) $(MOREPROGS)
