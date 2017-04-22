@@ -8,7 +8,7 @@ else
 	ZAP =
 endif
 
-PROGS = filetype access umask
+PROGS = filetype access umask changemod
 MOREPROGS =
 
 all:	$(PROGS) $(MOREPROGS)
