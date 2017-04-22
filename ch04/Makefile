@@ -8,7 +8,7 @@ else
 	ZAP =
 endif
 
-PROGS = filetype access
+PROGS = filetype access umask
 MOREPROGS =
 
 all:	$(PROGS) $(MOREPROGS)
@@ -17,6 +17,6 @@ all:	$(PROGS) $(MOREPROGS)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
 
 clean:
-	rm -f $(PROGS) $(MOREPROGS) $(TEMPFILES) *.o $(ZAP)
+	rm -f $(PROGS) $(MOREPROGS) $(TEMPFILES) *.o $(ZAP) foo bar
 
 include $(ROOT)/Make.libapue.inc

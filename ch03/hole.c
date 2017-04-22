@@ -10,34 +10,33 @@
  * need to allocate blocks for the data between the old end of file and the
  * locatino where you start writing.
  */
- #include "apue.h"
- #include <fcntl.h>
+#include "apue.h"
+#include <fcntl.h>
 
- char buf1[] = "abcdefghij";	/* 10 bytes */
- char buf2[] = "ABCDEFGHIJ";	/* 10 bytes */
+char buf1[] = "abcdefghij"; /* 10 bytes */
+char buf2[] = "ABCDEFGHIJ"; /* 10 bytes */
 
- int main(void)
- {
-     int fd;
+int main(void) {
+  int fd;
 
-     if ((fd = creat("file.hole", FILE_MODE)) < 0) {
-         err_sys("creat error");
-     }
+  if ((fd = creat("file.hole", FILE_MODE)) < 0) {
+    err_sys("creat error");
+  }
 
-     if (write(fd, buf1, 10) != 10) {
-         err_sys("buf1 write error");
-     }
-     /* offset now = 10 */
+  if (write(fd, buf1, 10) != 10) {
+    err_sys("buf1 write error");
+  }
+  /* offset now = 10 */
 
-     if (lseek(fd, 16384, SEEK_SET) == -1) {
-         err_sys("lseek error");
-     }
-     /* offset now = 16384 */
+  if (lseek(fd, 16384, SEEK_SET) == -1) {
+    err_sys("lseek error");
+  }
+  /* offset now = 16384 */
 
-     if (write(fd, buf2, 10) != 10) {
-     	err_sys("buf2 write error");
-     }
-     /* offset now = 16394 */
+  if (write(fd, buf2, 10) != 10) {
+    err_sys("buf2 write error");
+  }
+  /* offset now = 16394 */
 
-     exit(0);
- }
+  exit(0);
+}
