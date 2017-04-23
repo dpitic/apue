@@ -6,13 +6,8 @@
 #include <fcntl.h>
 
 int main(void) {
-  int fd;
-  if ((fd = open("tempfile", O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
+  if (open("tempfile", O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR) < 0) {
     err_sys("open error");
-  }
-  printf("tempfile fd = %d\n", fd);
-  if (write(fd, "hello", 5) != 5) {
-    err_sys("write error");
   }
   if (unlink("tempfile") < 0) {
     err_sys("unlink error");
