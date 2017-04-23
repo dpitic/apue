@@ -16,7 +16,7 @@ int main(void) {
    * the file is not created. The implementation in the book lacks these flags
    * and consequently, the tempfile is not created. 
    */
-  if (open("tempfile", O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR) < 0) {
+  if (open("tempfile", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR) < 0) {
     err_sys("open error");
   }
   /*

@@ -8,7 +8,7 @@ else
 	ZAP =
 endif
 
-PROGS = filetype access umask changemod unlink
+PROGS = filetype access umask changemod unlink $(ZAP)
 MOREPROGS =
 
 all:	$(PROGS) $(MOREPROGS)
@@ -17,6 +17,6 @@ all:	$(PROGS) $(MOREPROGS)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
 
 clean:
-	rm -f $(PROGS) $(MOREPROGS) $(TEMPFILES) *.o $(ZAP) foo bar
+	rm -f $(PROGS) $(MOREPROGS) $(TEMPFILES) *.o $(ZAP) foo bar times
 
 include $(ROOT)/Make.libapue.inc
