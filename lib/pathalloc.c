@@ -3,7 +3,7 @@
  *
  * POSIX.1 provides the PATH_MAX limit, but this is inteterminate on some
  * implementations, and must be determined using pathconf(). The value returned
- * by pathcomf() is the maximum size of a relative pathname, when the first
+ * by pathconf() is the maximum size of a relative pathname, when the first
  * argument is the working directory.
  *
  * Versions of POSIX.1 prior to 2001 were unclear whether PATH_MAX included a

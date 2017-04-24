@@ -9,7 +9,7 @@ else
 endif
 
 PROGS = filetype access umask changemod unlink $(ZAP)
-MOREPROGS =
+MOREPROGS = ftw8
 
 all:	$(PROGS) $(MOREPROGS)
 
