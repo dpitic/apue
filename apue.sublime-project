@@ -8,6 +8,16 @@
 	"settings":
 	{
 		// SublimeGDB commandline arguments
-		"sublimegdb_arguments": ".."
+		// "sublimegdb_arguments": ".."
+	},
+	"SublimeLinter":
+	{
+		"linters":
+		{
+			"clang": {
+				"extra_flags": "-Wall -I${project_folder}/include",
+				"include_dirs": ["/usr/include", "${project_folder}/include",]
+			}
+		}
 	}
 }
