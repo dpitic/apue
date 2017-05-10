@@ -3,7 +3,8 @@ PLATFORM=$(shell $(ROOT)/systype.sh)
 include $(ROOT)/Make.defines.$(PLATFORM)
 
 ifeq "$(PLATFORM)" "linux"
-	MEMSTR = MEMSTR
+#	MEMSTR = MEMSTR
+	MEMSTR =
 else
 	MEMSTR =
 endif

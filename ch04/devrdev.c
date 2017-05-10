@@ -7,9 +7,6 @@
 #ifdef SOLARIS
 #include <sys/mkdev.h>
 #endif
-#ifdef LINUX
-#include <sys/sysmacros.h> /* appears to be required by Linux */
-#endif
 
 int main(int argc, char const *argv[]) {
   int i;

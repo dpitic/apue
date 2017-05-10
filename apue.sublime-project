@@ -17,7 +17,7 @@
 			"clang": {
 				"extra_flags": "-Wall -I${project_folder}/include",
 				"include_dirs": [
-					// "/usr/include/", 
+					"/usr/include",
 					"${project_folder}/include"
 				]
 			}
