@@ -9,7 +9,7 @@ else
 	MEMSTR =
 endif
 
-PROGS =
+PROGS = getcputc fgetsfputs
 
 all:	$(PROGS) $(MEMSTR)
 
