@@ -9,7 +9,7 @@ else
 	MEMSTR =
 endif
 
-PROGS = getcputc fgetsfputs
+PROGS = getcputc fgetsfputs buf tempfiles mkstemp
 
 all:	$(PROGS) $(MEMSTR)
 
@@ -17,6 +17,6 @@ all:	$(PROGS) $(MEMSTR)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
 
 clean:
-	rm -f $(PROGS) $(TEMPFILES) *.o $(MEMSTR)
+	rm -f $(PROGS) $(TEMPFILES) *.o $(MEMSTR) std.out std.err
 
 include $(ROOT)/Make.libapue.inc
