@@ -15,10 +15,14 @@
 		"linters":
 		{
 			"clang": {
-				"extra_flags": "-Wall -I${project_folder}/include",
+				"extra_flags": "-Wall -DLINUX -D_GNU_SOURCE -I${project_folder}/include",
 				"include_dirs": [
 					"/usr/include",
-					"${project_folder}/include"
+					"${project_folder}/include",
+					"/usr/include/x86_64-linux-gnu",
+					"/usr/include/c++/6.3.0",
+                	"/usr/local/include",
+                	"/usr/lib/clang/4.0.0/include"
 				]
 			}
 		}

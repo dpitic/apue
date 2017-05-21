@@ -1,1 +1,6 @@
 -Iinclude
+-I/usr/include/x86_64-linux-gnu
+-I/usr/include/c++/6.3.0
+-I/usr/local/include
+-DLNUX
+-D_GNU_SOURCE
