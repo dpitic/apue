@@ -2,7 +2,7 @@ ROOT=..
 PLATFORM=$(shell $(ROOT)/systype.sh)
 include $(ROOT)/Make.defines.$(PLATFORM)
 
-PROGS = hello1
+PROGS = hello1 doatexit echoarg
 
 all:	$(PROGS)
 
