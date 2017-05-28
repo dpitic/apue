@@ -4,7 +4,7 @@ include $(ROOT)/Make.defines.$(PLATFORM)
 
 PROGS = hello1 doatexit echoarg testjmp
 
-all:	$(PROGS)
+all:	$(PROGS) opendata.o
 
 %:	%.c $(LIBAPUE)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
