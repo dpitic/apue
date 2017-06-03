@@ -43,6 +43,8 @@ long open_max(void);        /* openmax.c */
 void set_fl(int, int); /* setfl.c */
 void clr_fl(int, int);
 
+void pr_exit(int);      /* prexit.c */
+
 void err_quit(const char *, ...) __attribute__((noreturn));
 void err_sys(const char *, ...) __attribute__((noreturn));
 void err_ret(const char *, ...);
