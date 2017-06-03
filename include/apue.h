@@ -50,4 +50,8 @@ void err_sys(const char *, ...) __attribute__((noreturn));
 void err_ret(const char *, ...);
 void err_dump(const char *, ...) __attribute__((noreturn));
 
+void TELL_WAIT(void);   /* parent/child from race conditions section */
+void TELL_CHILD(pid_t);
+void WAIT_PARENT(void);
+
 #endif /* _APUE_H */
