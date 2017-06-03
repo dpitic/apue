@@ -2,7 +2,7 @@ ROOT=..
 PLATFORM=$(shell $(ROOT)/systype.sh)
 include $(ROOT)/Make.defines.$(PLATFORM)
 
-PROGS = fork1 vfork1 wait1
+PROGS = fork1 vfork1 wait1 fork2
 
 all:	$(PROGS) 
 
