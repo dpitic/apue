@@ -1,3 +1,7 @@
+/*
+ * Utility routines that use signaling to avoid race conditions between parent
+ * and child processes.
+ */
 #include "apue.h"
 
 static volatile sig_atomic_t sigflag; /* set nonzero by sig handler */
@@ -6,6 +10,9 @@ static sigset_t newmask, oldmask, zeromask;
 /* One signal handler for SIGURS1 and SIGUSR2 */
 static void sig_usr(int signo) { sigflag = 1; }
 
+/*
+ * Set things up for TELL_xxx() and WAIT_xxx().
+ */
 void TELL_WAIT(void) {
   if (signal(SIGUSR1, sig_usr) == SIG_ERR) {
     err_sys("signal(SIGUSR1) error");
@@ -26,6 +33,9 @@ void TELL_WAIT(void) {
 
 /* void TELL_PARENT(void) */
 
+/*
+ * Tell parent we're done.
+ */
 void WAIT_PARENT(void) {
   while (sigflag == 0) {
     sigsuspend(&zeromask); /* and wait for parent */
@@ -38,6 +48,9 @@ void WAIT_PARENT(void) {
   }
 }
 
+/*
+ * Tell child we're done.
+ */
 void TELL_CHILD(pid_t pid) {
   kill(pid, SIGUSR1);   /* tell child we're done */
 }
