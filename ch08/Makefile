@@ -2,10 +2,25 @@ ROOT=..
 PLATFORM=$(shell $(ROOT)/systype.sh)
 include $(ROOT)/Make.defines.$(PLATFORM)
 
-PROGS = fork1 vfork1 wait1 fork2 tellwait1 tellwait2 exec1 echoall exec2 printuids
+ACCT =
+ACCTFLAGS =
+ifeq "$(PLATFORM)" "linux"
+	ACCT = pracct
+	ACCTFLAGS = -DHAS_AXSIG -DHAS_ACORE
+endif
+ifeq "$(PLATFORM)" "macos"
+	ACCT = pracct
+	ACCTFLAGS = -DHAS_AXSIG -DHAS_ACORE
+endif
+ifeq "$(PLATFORM)" "solaris"
+	ACCT = pracct
+	ACCTFLAGS = -DHAS_AC_STAT
+endif
+
+PROGS = fork1 vfork1 wait1 fork2 tellwait1 tellwait2 exec1 echoall exec2 printuids test1 nice
 MOREPROGS = systest1 systest3
 
-all:	$(PROGS) $(MOREPROGS) system.o
+all:	$(PROGS) $(MOREPROGS) system.o $(ACCT)
 
 %:	%.c $(LIBAPUE)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
@@ -16,7 +31,10 @@ systest1:	system.o systest1.o $(LIBAPUE)
 systest3:	system.o systest3.o $(LIBAPUE)
 	$(CC) $(CFLAGS) -o systest3 systest3.o system.o $(LDFLAGS) $(LDLIBS)
 
+pracct:		pracct.c $(LIBAPUE)
+	$(CC) $(CFLAGS) $(ACCTFLAGS) -o pracct pracct.c $(LDFLAGS) $(LDLIBS)
+
 clean:
-	rm -f $(PROGS) $(MOREPROGS) $(TEMPFILES) *.o
+	rm -f $(PROGS) $(MOREPROGS) $(TEMPFILES) *.o $(ACCT)
 
 include $(ROOT)/Make.libapue.inc
