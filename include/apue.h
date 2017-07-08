@@ -34,6 +34,9 @@
  */
 #define FILE_MODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 
+/* Simplified signal handler function prototype */
+typedef void Sigfunc(int); 
+
 /*
  * Prototypes for custom functions used in the book.
  */
@@ -44,6 +47,9 @@ void set_fl(int, int); /* setfl.c */
 void clr_fl(int, int);
 
 void pr_exit(int);      /* prexit.c */
+
+/* Simplified signal() prototype for cross-platform implementation */
+Sigfunc *signal(int, Sigfunc *); 
 
 void err_quit(const char *, ...) __attribute__((noreturn));
 void err_sys(const char *, ...) __attribute__((noreturn));
