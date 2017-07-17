@@ -14,6 +14,7 @@ Sigfunc *signal(int signo, Sigfunc *func) {
     act.sa_flags |= SA_INTERRUPT;
 #endif
   } else {
+    /* Automatically try to restart interrupted system. */
     act.sa_flags |= SA_RESTART;
   }
   if (sigaction(signo, &act, &oact) < 0) {
