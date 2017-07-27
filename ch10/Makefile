@@ -2,7 +2,16 @@ ROOT=..
 PLATFORM=$(shell $(ROOT)/systype.sh)
 include $(ROOT)/Make.defines.$(PLATFORM)
 
-PROGS = sigusr reenter
+CLD =
+
+ifeq "$(PLATFORM)" "linux"
+	CLD = child
+endif
+ifeq "$(PLATFORM)" "solaris"
+	CLD = child
+endif
+
+PROGS = sigusr reenter $(CLD)
 
 all:	$(PROGS)
 
@@ -10,6 +19,6 @@ all:	$(PROGS)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
 
 clean:
-	rm -f $(PROGS) $(TEMPFILES) *.o
+	rm -f $(PROGS) $(TEMPFILES) *.o $(CLD)
 
 include $(ROOT)/Make.libapue.inc
