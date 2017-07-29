@@ -11,14 +11,18 @@ ifeq "$(PLATFORM)" "solaris"
 	CLD = child
 endif
 
-PROGS = sigusr reenter $(CLD)
+PROGS = sigusr reenter $(CLD) read1 read2
+MOREPROGS = tsleep2
 
-all:	$(PROGS)
+all:	$(PROGS) $(MOREPROGS) sleep1.o sleep2.o
+
+tsleep2:	tsleep2.o sleep2.o $(LIBAPUE)
+	$(CC) $(CFLAGS) -o tsleep2 tsleep2.o sleep2.o $(LDFLAGS) $(LDLIBS)
 
 %:	%.c $(LIBAPUE)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
 
 clean:
-	rm -f $(PROGS) $(TEMPFILES) *.o $(CLD)
+	rm -f $(PROGS) $(MOREPROGS) $(TEMPFILES) *.o $(CLD)
 
 include $(ROOT)/Make.libapue.inc
