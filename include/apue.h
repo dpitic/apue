@@ -48,6 +48,8 @@ void clr_fl(int, int);
 
 void pr_exit(int);      /* prexit.c */
 
+void pr_mask(const char *);		/* prmask.c */
+
 /* Simplified signal() prototype for cross-platform implementation */
 Sigfunc *signal(int, Sigfunc *); 
 
