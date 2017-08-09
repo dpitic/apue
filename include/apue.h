@@ -35,7 +35,7 @@
 #define FILE_MODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
 
 /* Simplified signal handler function prototype */
-typedef void Sigfunc(int); 
+typedef void Sigfunc(int);
 
 /*
  * Prototypes for custom functions used in the book.
@@ -46,19 +46,20 @@ long open_max(void);        /* openmax.c */
 void set_fl(int, int); /* setfl.c */
 void clr_fl(int, int);
 
-void pr_exit(int);      /* prexit.c */
+void pr_exit(int); /* prexit.c */
 
-void pr_mask(const char *);		/* prmask.c */
+void pr_mask(const char *);           /* prmask.c */
+Sigfunc *signal_intr(int, Sigfunc *); /* signalintr.c */
 
 /* Simplified signal() prototype for cross-platform implementation */
-Sigfunc *signal(int, Sigfunc *); 
+/* Sigfunc *signal(int, Sigfunc *); */
 
 void err_quit(const char *, ...) __attribute__((noreturn));
 void err_sys(const char *, ...) __attribute__((noreturn));
 void err_ret(const char *, ...);
 void err_dump(const char *, ...) __attribute__((noreturn));
 
-void TELL_WAIT(void);   /* parent/child from race conditions section */
+void TELL_WAIT(void); /* parent/child from race conditions section */
 void TELL_CHILD(pid_t);
 void WAIT_PARENT(void);
 
