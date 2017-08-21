@@ -1,6 +1,7 @@
 /*
  * This program demonstrates the correct way to protect a critical region of
- * code from a specific signal.
+ * code from a specific signal.  It uses sigsuspend() to restore the signal mask
+ * and put the process to sleep in a single atomic operation.
  */
 #include "apue.h"
 
