@@ -32,9 +32,9 @@
             "includePath": [
                 "${workspaceRoot}",
                 "${workspaceRoot}/include",
-                "/usr/include/c++/6.3.0",
+                "/usr/include/c++/7",
                 "/usr/local/include",
-                "/usr/lib/clang/4.0.0/include",
+                "/usr/lib/clang/4.0.1/include",
                 "/usr/include/x86_64-linux-gnu",
                 "/usr/include"
             ],
@@ -44,9 +44,9 @@
             ],
             "browse": {
                 "path": [
-                    "/usr/include/c++/6.3.0",
+                    "/usr/include/c++/7",
                     "/usr/local/include",
-                    "/usr/lib/clang/4.0.0/include",
+                    "/usr/lib/clang/4.0.1/include",
                     "/usr/include",
                     "${workspaceRoot}"
                 ],
