@@ -5,8 +5,7 @@
             "includePath": [
                 "${workspaceRoot}",
                 "${workspaceRoot}/include",
-                "/usr/include",
-                "/usr/local/include"
+                "/usr/include"
             ],
             "defines": [
                 "MACOS",
@@ -14,9 +13,9 @@
             ],
             "browse": {
                 "path": [
-                    "/usr/include",
-                    "/usr/local/include",
-                    "${workspaceRoot}"
+                    "${workspaceRoot}",
+                    "${workspaceRoot}/include",
+                    "/usr/include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
