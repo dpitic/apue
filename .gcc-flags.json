@@ -1,4 +1,4 @@
 {
   "gccDefaultCFlags": "-Wall -DLINUX -D_GNU_SOURCE",
-  "gccIncludePaths": "./include,/usr/include,/usr/include/x86_64-linux-gnu,/usr/include/c++/6.3.0,/usr/local/include,/usr/lib/clang/4.0.0/include"
+  "gccIncludePaths": "./include,/usr/include,/usr/include/x86_64-linux-gnu,/usr/include/c++/7,/usr/local/include,/usr/lib/clang/4.0.1/include"
 }
