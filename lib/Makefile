@@ -9,7 +9,7 @@ LIBMISC = libapue.a
 OBJS = error.o pathalloc.o openmax.o setfl.o clrfl.o prexit.o tellwait.o \
 		signal.o prmask.o signalintr.o
 
-all:	$(LIBMISC)
+all:	$(LIBMISC) sleep.o
 
 $(LIBMISC): $(OBJS)
 	$(AR) rv $(LIBMISC) $?
