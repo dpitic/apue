@@ -7,6 +7,9 @@
 #ifdef SOLARIS
 #include <sys/mkdev.h>
 #endif
+#ifdef _GNU_SOURCE
+#include <sys/sysmacros.h>
+#endif
 
 int main(int argc, char const *argv[]) {
   int i;

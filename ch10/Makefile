@@ -11,7 +11,7 @@ ifeq "$(PLATFORM)" "solaris"
 	CLD = child
 endif
 
-PROGS = sigusr reenter read1 read2 critical mask suspend1 suspend2
+PROGS = sigusr reenter read1 read2 critical mask suspend1 suspend2 sigstp
 MOREPROGS = tsleep2 systest2
 
 all:	$(PROGS) $(MOREPROGS) sleep1.o sleep2.o abort.o system.o $(CLD)
