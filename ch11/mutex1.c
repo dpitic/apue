@@ -7,7 +7,10 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-/* Sample strucutre accessed by multiple threads */
+/* 
+ * Sample strucutre designed to be accessed by multiple threads.  This struct is
+ * only thread safe when manipulated by the functions in this file.
+ */
 struct foo {
   int f_count;            /* reference counter */
   pthread_mutex_t f_lock; /* mutex lock */
@@ -15,7 +18,11 @@ struct foo {
   /* ... other struct members here ... */
 };
 
-/* Utility function used to allocate and initialise struct foo object */
+/* 
+ * Utility function used to allocate memory and initialise struct foo object. 
+ * If successful, it returns a pointer to the new object.  On failute, it 
+ * returns NULL.
+ */
 struct foo *foo_alloc(int id) {
   struct foo *fp;
   /* Allocate memory and initialise structure */
