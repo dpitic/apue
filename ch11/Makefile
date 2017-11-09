@@ -26,7 +26,7 @@ endif
 
 PROGS = threadid exitstatus badexit2 cleanup
 
-all:	$(PROGS) $(TLOCK) $(BAR)
+all:	$(PROGS) mutex1.o $(TLOCK) $(BAR)
 
 %:	%.c $(LIBAPUE)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
