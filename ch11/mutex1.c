@@ -20,7 +20,8 @@ struct foo {
 
 /* 
  * Utility function used to allocate memory and initialise struct foo object. 
- * If successful, it returns a pointer to the new object.  On failute, it 
+ * This includes attempting to initialise the mutex lock in the object.
+ * If successful, it returns a pointer to the new object.  On failure, it 
  * returns NULL.
  */
 struct foo *foo_alloc(int id) {
@@ -38,14 +39,17 @@ struct foo *foo_alloc(int id) {
   return (fp);
 }
 
-/* Increase object reference count */
+/* Increase object reference count.  This function will block. */
 void foo_hold(struct foo *fp) {
   pthread_mutex_lock(&fp->f_lock);
   fp->f_count++;
   pthread_mutex_unlock(&fp->f_lock);
 }
 
-/* Decrease reference count and release object memory if possible */
+/* 
+ * Decrease reference count and release object memory if possible.  This
+ * function will block.
+ */
 void foo_rele(struct foo *fp) {
   pthread_mutex_lock(&fp->f_lock);
   if (--fp->f_count == 0) { /* last reference */
