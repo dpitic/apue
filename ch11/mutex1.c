@@ -2,7 +2,11 @@
  * The code sample demonstrates using a mutex to protect a data structure.  When
  * multiple threads need to access a dynamically allocated object, a reference
  * count can be embedded in the object to ensure that it's memory is not freed
- * before all threads have finished using it.
+ * before all threads have finished using it.  The simple example neglects to
+ * address how threads find an object to obtain a reference.  Therefore, even if
+ * the reference count is zero, it would be a mistake for a thread to free the
+ * object's memory if another thread is blocked on the mutex in a call to 
+ * foo_hold().
  */
 #include <pthread.h>
 #include <stdlib.h>
@@ -39,7 +43,11 @@ struct foo *foo_alloc(int id) {
   return (fp);
 }
 
-/* Increase object reference count.  This function will block. */
+/* 
+ * Increase object reference count.  This function will block.  Before using the
+ * object, threads are expected to call this function to add a reference to the
+ * object.
+ */
 void foo_hold(struct foo *fp) {
   pthread_mutex_lock(&fp->f_lock);
   fp->f_count++;
@@ -48,7 +56,12 @@ void foo_hold(struct foo *fp) {
 
 /* 
  * Decrease reference count and release object memory if possible.  This
- * function will block.
+ * function will block.  When a thread is finished with the object, it is
+ * expected to call this function to release the reference.  When the last
+ * reference is released, the object's memory is freed.  Note that this
+ * implementation disregards how threads find the object.  Even if the reference
+ * count is zero, it would be a mistake to free the object's memory if another
+ * thread is blocked on the mutex in a call to foo_hold().
  */
 void foo_rele(struct foo *fp) {
   pthread_mutex_lock(&fp->f_lock);
