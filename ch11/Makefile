@@ -9,10 +9,10 @@ ifeq "$(PLATFORM)" "macos"
 	TLOCK =
 	EXTRALIBS = -pthread
 else
-	TLOCK = 
+	TLOCK =
 endif
 ifeq "$(PLATFORM)" "linux"
-	BAR = 
+	BAR =
 	EXTRALIBS = -pthread -lrt -lbsd
 endif
 ifeq "$(PLATFORM)" "freebsd"
@@ -26,7 +26,7 @@ endif
 
 PROGS = threadid exitstatus badexit2 cleanup
 
-all:	$(PROGS) mutex1.o $(TLOCK) $(BAR)
+all:	$(PROGS) mutex1.o mutex2.o $(TLOCK) $(BAR)
 
 %:	%.c $(LIBAPUE)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
