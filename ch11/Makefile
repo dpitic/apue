@@ -12,7 +12,7 @@ else
 	TLOCK = timedlock
 endif
 ifeq "$(PLATFORM)" "linux"
-	BAR =
+	BAR = barrier
 	EXTRALIBS = -pthread -lrt -lbsd
 endif
 ifeq "$(PLATFORM)" "freebsd"
@@ -26,7 +26,7 @@ endif
 
 PROGS = threadid exitstatus badexit2 cleanup
 
-all:	$(PROGS) mutex1.o mutex2.o mutex3.o rwlock.o $(TLOCK) $(BAR)
+all:	$(PROGS) mutex1.o mutex2.o mutex3.o rwlock.o condvar.o $(TLOCK) $(BAR)
 
 %:	%.c $(LIBAPUE)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
