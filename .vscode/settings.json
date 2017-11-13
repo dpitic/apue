@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "signal.h": "c",
-        "apue.h": "c"
+        "apue.h": "c",
+        "stddef.h": "c",
+        "time.h": "c"
     }
 }

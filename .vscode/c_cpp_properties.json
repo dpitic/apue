@@ -3,9 +3,8 @@
         {
             "name": "Mac",
             "includePath": [
-                "${workspaceRoot}",
-                "${workspaceRoot}/include",
-                "/usr/include"
+                "/usr/include",
+                "${workspaceRoot}/include"
             ],
             "defines": [
                 "MACOS",
@@ -13,9 +12,8 @@
             ],
             "browse": {
                 "path": [
-                    "${workspaceRoot}",
-                    "${workspaceRoot}/include",
-                    "/usr/include"
+                    "/usr/include",
+                    "${workspaceRoot}/include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -29,13 +27,10 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceRoot}",
-                "${workspaceRoot}/include",
-                "/usr/include/c++/7",
-                "/usr/local/include",
                 "/usr/lib/clang/4.0.1/include",
                 "/usr/include/x86_64-linux-gnu",
-                "/usr/include"
+                "/usr/include",
+                "${workspaceRoot}/include"
             ],
             "defines": [
                 "LINUX",
@@ -43,11 +38,10 @@
             ],
             "browse": {
                 "path": [
-                    "/usr/include/c++/7",
-                    "/usr/local/include",
                     "/usr/lib/clang/4.0.1/include",
+                    "/usr/include/x86_64-linux-gnu",
                     "/usr/include",
-                    "${workspaceRoot}"
+                    "${workspaceRoot}/include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
