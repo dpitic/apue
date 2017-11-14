@@ -26,7 +26,8 @@
 			"gcc": {
 				"extra_flags": "-Wall -DLINUX -D_GNU_SOURCE -I${project_folder}/include",
 				"include_dirs": [
-                	"/usr/lib/clang/4.0.1/include",
+                	"/usr/lib/gcc/x86_64-linux-gnu/7/include",
+                	"/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed",
 					"/usr/include/x86_64-linux-gnu",
 					"/usr/include",
 					"${project_folder}/include"
