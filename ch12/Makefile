@@ -6,13 +6,13 @@ TOUT =
 ifeq "$(PLATFORM)" "freebsd"
 	EXTRALIBS = -pthread
 endif
-ifeq "$(PLATFOMR)" "linux"
+ifeq "$(PLATFORM)" "linux"
 	EXTRALIBS = -pthread
-	TOUT =
+	TOUT = timeout.o
 endif
 ifeq "$(PLATFORM)" "solaris"
 	EXTRALIBS = -lpthread
-	TOUT =
+	TOUT = timeout.o
 endif
 
 PROGS =
