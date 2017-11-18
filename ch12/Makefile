@@ -17,7 +17,7 @@ endif
 
 PROGS =
 
-all:	$(PROGS) detach.o $(TOUT)
+all:	$(PROGS) detach.o getenv1.o getenv2.o getenv3.o $(TOUT)
 
 %:	%.c $(LIBAPUE)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
