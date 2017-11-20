@@ -30,6 +30,19 @@ void err_sys(const char *fmt, ...) {
 }
 
 /*
+ * Nonfatal error unrelated to a system call.
+ * Error code passed as explicit parameter.
+ * Print a message and return.
+ */
+void err_cont(int error, const char *fmt, ...) {
+  va_list ap;
+
+  va_start(ap, fmt);
+  err_doit(1, error, fmt, ap);
+  va_end(ap);
+}
+
+/*
  * Fatal error unrelated to a system call.
  * Error code passed as explicit parameter.
  * Print a message and terminate.
