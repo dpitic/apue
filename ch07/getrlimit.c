@@ -48,7 +48,7 @@ int main(void) {
 #endif
 
 #ifdef RLIMIT_NPTS
-  doit(RLILMIT_NPTS);
+  doit(RLIMIT_NPTS);
 #endif
 
 #ifdef RLIMIT_RSS
