@@ -14,7 +14,13 @@
 #endif
 
 #include <sys/stat.h>
+
+#if defined(BSD) /* FreeBSD */
+#include <termios.h> /* for winsize */
+#else
 #include <sys/termios.h> /* for winsize */
+#endif
+
 #include <sys/types.h>   /* some systems still require this */
 #if defined(MACOS) || !defined(TIOCGWINSZ)
 #include <sys/ioctl.h>
