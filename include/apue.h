@@ -57,6 +57,8 @@ void pr_exit(int); /* prexit.c */
 void pr_mask(const char *);           /* prmask.c */
 Sigfunc *signal_intr(int, Sigfunc *); /* signalintr.c */
 
+void daemonize(const char *);  /* daemonize.c */
+
 /* Simplified signal() prototype for cross-platform implementation */
 /* Sigfunc *signal(int, Sigfunc *); */
 
