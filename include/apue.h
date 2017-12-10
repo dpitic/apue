@@ -15,13 +15,13 @@
 
 #include <sys/stat.h>
 
-#if defined(BSD) /* FreeBSD */
+#if defined(BSD)     /* FreeBSD */
 #include <termios.h> /* for winsize */
 #else
 #include <sys/termios.h> /* for winsize */
 #endif
 
-#include <sys/types.h>   /* some systems still require this */
+#include <sys/types.h> /* some systems still require this */
 #if defined(MACOS) || !defined(TIOCGWINSZ)
 #include <sys/ioctl.h>
 #endif
@@ -57,7 +57,7 @@ void pr_exit(int); /* prexit.c */
 void pr_mask(const char *);           /* prmask.c */
 Sigfunc *signal_intr(int, Sigfunc *); /* signalintr.c */
 
-void daemonize(const char *);  /* daemonize.c */
+void daemonize(const char *); /* daemonize.c */
 
 /* Simplified signal() prototype for cross-platform implementation */
 /* Sigfunc *signal(int, Sigfunc *); */
