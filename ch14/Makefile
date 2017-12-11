@@ -9,7 +9,7 @@ ifeq "$(PLATFORM)" "solaris"
 	EXTRALIBS = -lrt
 endif
 
-PROGS = nonblockw
+PROGS = nonblockw deadlock
 MOREPROGS =
 
 all:	$(PROGS) $(MOREPROGS)
