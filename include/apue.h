@@ -75,6 +75,9 @@ int lock_reg(int, int, int, off_t, int, off_t); /* lockreg.c */
 #define un_lock(fd, offset, whence, len)                                       \
   lock_reg((fd), F_SETLK, F_UNLCK, (offset), (whence), (len))
 
+/* Alternative definition of lockfile() */
+/* #define lockfile(fd) write_lock((fd), 0, SEEK_SET, 0) */
+
 pid_t lock_test(int, int, off_t, int, off_t); /* locktest.c */
 
 #define is_read_lockable(fd, offset, whence, len)                              \
