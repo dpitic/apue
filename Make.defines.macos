@@ -3,13 +3,24 @@
 # Definitions required in all program directories to compile and link
 # C programs using gcc.
 
-CC=gcc
+# Original Makefile used gcc compiler
+# CC=gcc
+
+# Use clang compiler provided by Apple
+CC=cc
+
 COMPILE.c=$(CC) $(CFLAGS) $(CPPFLAGS) -c
 LINK.c=$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 LDFLAGS=
 LDDIR=-L$(ROOT)/lib
 LDLIBS=$(LDDIR) -lapue $(EXTRALIBS)
-CFLAGS=-ansi -I$(ROOT)/include -Wall -DMACOS -D_DARWIN_C_SOURCE $(EXTRA)
+
+# Flags for gcc compiler
+# CFLAGS=-ansi -I$(ROOT)/include -Wall -DMACOS -D_DARWIN_C_SOURCE $(EXTRA)
+
+# Flags for clang compiler
+CFLAGS=-I$(ROOT)/include -Wall -DMACOS -D_DARWIN_C_SOURCE $(EXTRA)
+
 RANLIB=ranlib
 AR=ar
 AWK=awk
