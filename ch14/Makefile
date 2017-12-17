@@ -9,10 +9,16 @@ ifeq "$(PLATFORM)" "solaris"
 	EXTRALIBS = -lrt
 endif
 
-PROGS = nonblockw deadlock mandatory
-MOREPROGS =
+PROGS = nonblockw deadlock mandatory rot13a
+MOREPROGS = 
 
 all:	$(PROGS) $(MOREPROGS) lockfile.o
+
+rot13c2.c:	rot13c2.c.in $(LIBAPUE)
+	./fixup.awk rot13a.c >xlate
+	sed '/same/q' rot13c2.c.in >rot13c2.c
+	cat xlate >>rot13c2.c
+	sed '1,/same/d' rot13c2.c.in >>rot13c2.c
 
 %:	%.c $(LIBAPUE)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
