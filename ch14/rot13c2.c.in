@@ -3,24 +3,20 @@
  * asynchronous I/O functions.
  */
 #include "apue.h"
-#include <ctype.h>
-#include <fcntl.h>
 #include <aio.h>
+#include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #define BSZ 4096
 #define NBUF 8
 
-enum rwop {
-  UNUSED = 0,
-  READ_PENDING = 1,
-  WRITE_PENDING = 2
-};
+enum rwop { UNUSED = 0, READ_PENDING = 1, WRITE_PENDING = 2 };
 
 struct buf {
-  enum rwop     op;
-  int           last;
-  struct aiocb  aiocb;
+  enum rwop op;
+  int last;
+  struct aiocb aiocb;
   unsigned char data[BSZ];
 };
 
@@ -38,15 +34,14 @@ unsigned char translate(unsigned char c) {
       c += 13;
     }
   }
-  return(c);
+  return (c);
 }
 
-int main(int argc, char *argv[])
-{
-  int                ifd, ofd, i, j, n, err, numop;
-  struct stat        sbuf;
+int main(int argc, char *argv[]) {
+  int ifd, ofd, i, j, n, err, numop;
+  struct stat sbuf;
   const struct aiocb *aiolist[NBUF];
-  off_t              off = 0;
+  off_t off = 0;
 
   if (argc != 3) {
     err_quit("Usage: rot13a infile outfile");
@@ -73,7 +68,7 @@ int main(int argc, char *argv[])
   for (;;) {
     for (i = 0; i < NBUF; i++) {
       switch (bufs[i].op) {
-      case UNUSED: {
+      case UNUSED:
         /* Read from the input file if more data remains unread. */
         if (off < sbuf.st_size) {
           bufs[i].op = READ_PENDING;
@@ -152,9 +147,8 @@ int main(int argc, char *argv[])
         break;
       }
     } else {
-        if (aio_suspend(aiolist, NBUF, NULL) < 0) {
-          err_sys("aio_suspend() failed");
-        }
+      if (aio_suspend(aiolist, NBUF, NULL) < 0) {
+        err_sys("aio_suspend() failed");
       }
     }
   }

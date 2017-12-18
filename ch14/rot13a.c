@@ -25,11 +25,10 @@ unsigned char translate(unsigned char c) {
       c += 13;
     }
   }
-  return(c);
+  return (c);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   int ifd, ofd, i, n, nw;
 
   if (argc != 3) {

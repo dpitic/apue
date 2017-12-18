@@ -10,7 +10,7 @@ ifeq "$(PLATFORM)" "solaris"
 endif
 
 PROGS = nonblockw deadlock mandatory rot13a
-MOREPROGS = 
+MOREPROGS = rot13c2
 
 all:	$(PROGS) $(MOREPROGS) lockfile.o
 
