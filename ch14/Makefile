@@ -12,7 +12,7 @@ endif
 PROGS = nonblockw deadlock mandatory rot13a
 MOREPROGS = rot13c2
 
-all:	$(PROGS) $(MOREPROGS) lockfile.o
+all:	$(PROGS) $(MOREPROGS) lockfile.o readn.o writen.o
 
 rot13c2.c:	rot13c2.c.in $(LIBAPUE)
 	./fixup.awk rot13a.c >xlate
