@@ -9,7 +9,7 @@ ifeq "$(PLATFORM)" "solaris"
 	EXTRALIBS = -lrt
 endif
 
-PROGS = nonblockw deadlock mandatory rot13a
+PROGS = nonblockw deadlock mandatory rot13a mcopy2
 MOREPROGS = rot13c2
 
 all:	$(PROGS) $(MOREPROGS) lockfile.o readn.o writen.o
