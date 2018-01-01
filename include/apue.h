@@ -88,6 +88,7 @@ pid_t lock_test(int, int, off_t, int, off_t); /* locktest.c */
 #define is_write_lockable(fd, offset, whence, len)                             \
   (lock_test((fd), F_WRLCK, (offset), (whence), (len)) == 0)
 
+void err_msg(const char *, ...);
 void err_quit(const char *, ...) __attribute__((noreturn));
 void err_cont(int, const char *, ...);
 void err_sys(const char *, ...) __attribute__((noreturn));

@@ -57,19 +57,6 @@ void err_exit(int error, const char *fmt, ...) {
 }
 
 /*
- * Fatal error unrelated to a system call.
- * Print a message and terminate.
- */
-void err_quit(const char *fmt, ...) {
-  va_list ap;
-
-  va_start(ap, fmt);
-  err_doit(0, 0, fmt, ap);
-  va_end(ap);
-  exit(1);
-}
-
-/*
  * Fatal error related to a system call.
  * Print a message, dump core, and terminate.
  */
@@ -81,6 +68,31 @@ void err_dump(const char *fmt, ...) {
   va_end(ap);
   abort(); /* dump core and terminate */
   exit(1); /* shouldn't reach this point */
+}
+
+/*
+ * Nonfatal error unrelated to a system call.
+ * Print a message and return.
+ */
+void err_msg(const char *fmt, ...) {
+  va_list ap;
+
+  va_start(ap, fmt);
+  err_doit(0, 0, fmt, ap);
+  va_end(ap);
+}
+
+/*
+ * Fatal error unrelated to a system call.
+ * Print a message and terminate.
+ */
+void err_quit(const char *fmt, ...) {
+  va_list ap;
+
+  va_start(ap, fmt);
+  err_doit(0, 0, fmt, ap);
+  va_end(ap);
+  exit(1);
 }
 
 /*
