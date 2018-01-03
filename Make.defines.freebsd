@@ -1,15 +1,26 @@
-# Common make definitions for Linux
+# Common make definitions for FreeBSD
 
 # Definitions required in all program directories to complie and link
 # C programs using gcc.
 
-CC=gcc
+# Original Makefile used gcc compiler
+# CC=gcc
+
+# Use clang compiler (default for FreeBSD)
+CC=cc
+
 COMPILE.c=$(CC) $(CFLAGS) $(CPPFLAGS) -c
 LINK.c=$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 LDFLAGS=
 LDDIR=-L$(ROOT)/lib
 LDLIBS=$(LDDIR) -lapue $(EXTRALIBS)
-CFLAGS=-ansi -I$(ROOT)/include -Wall -DBSD -D__BSD_VISIBLE $(EXTRA)
+
+# Flags for gcc compiler
+# CFLAGS=-ansi -I$(ROOT)/include -Wall -DBSD -D__BSD_VISIBLE $(EXTRA)
+
+# Flags for clang compiler
+CFLAGS=-I$(ROOT)/include -Wall -DBSD -D__BSD_VISIBLE $(EXTRA)
+
 RANLIB=ranlib
 AR=ar
 AWK=awk
