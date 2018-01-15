@@ -6,6 +6,9 @@ TOUT =
 ifeq "$(PLATFORM)" "freebsd"
 	EXTRALIBS = -pthread
 endif
+ifeq "$(PLATFORM)" "openbsd"
+	EXTRALIBS = -lpthread
+endif
 ifeq "$(PLATFORM)" "linux"
 	EXTRALIBS = -pthread
 	TOUT = timeout.o

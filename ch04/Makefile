@@ -7,8 +7,14 @@ ifeq "$(PLATFORM)" "linux"
 else
 	ZAP =
 endif
+ifeq "$(PLATFORM)" "openbsd"
+# Can't find major(), minor() in sys/types.h
+	DEVRDEV =
+else
+	DEVRDEV = devrdev
+endif
 
-PROGS = filetype access umask changemod unlink $(ZAP) mycd cdpwd devrdev
+PROGS = filetype access umask changemod unlink $(ZAP) mycd cdpwd $(DEVRDEV)
 MOREPROGS = ftw8
 
 all:	$(PROGS) $(MOREPROGS)
@@ -17,6 +23,6 @@ all:	$(PROGS) $(MOREPROGS)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
 
 clean:
-	rm -f $(PROGS) $(MOREPROGS) $(TEMPFILES) *.o $(ZAP) foo bar times
+	rm -f $(PROGS) $(MOREPROGS) $(TEMPFILES) *.o $(ZAP) $(DEVRDEV) foo bar times
 
 include $(ROOT)/Make.libapue.inc

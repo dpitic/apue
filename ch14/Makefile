@@ -10,7 +10,12 @@ ifeq "$(PLATFORM)" "solaris"
 endif
 
 PROGS = nonblockw deadlock mandatory rot13a mcopy2
-MOREPROGS = rot13c2
+ifeq "$(PLATFORM)" "openbsd"
+# Support for asynchronous I/O?
+	MOREPROGS =
+else
+	MOREPROGS = rot13c2
+endif
 
 all:	$(PROGS) $(MOREPROGS) lockfile.o readn.o writen.o
 
