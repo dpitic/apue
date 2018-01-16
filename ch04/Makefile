@@ -22,6 +22,9 @@ all:	$(PROGS) $(MOREPROGS)
 %:	%.c $(LIBAPUE)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
 
+ftw8:	ftw8.c $(LIBAPUE)
+	$(CC) $(CFLAGS) $(NAMEMAX) ftw8.c -o ftw8 $(LDFLAGS) $(LDLIBS)
+
 clean:
 	rm -f $(PROGS) $(MOREPROGS) $(TEMPFILES) *.o $(ZAP) $(DEVRDEV) foo bar times
 

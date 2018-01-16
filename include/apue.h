@@ -13,6 +13,7 @@
 #define _XOPEN_SOURCE 700
 #endif
 
+#include <sys/types.h> /* some systems still require this */
 #include <sys/stat.h>
 
 #if defined(BSD)     /* FreeBSD */
@@ -21,7 +22,6 @@
 #include <sys/termios.h> /* for winsize */
 #endif
 
-#include <sys/types.h> /* some systems still require this */
 #if defined(MACOS) || !defined(TIOCGWINSZ)
 #include <sys/ioctl.h>
 #endif

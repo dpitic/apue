@@ -21,6 +21,7 @@ CFLAGS=-std=c99 -m64 -I$(ROOT)/include -Wall -DSOLARIS -D__EXTENSIONS__ $(EXTRA)
 # Flags for clang compiler
 # CFLAGS=-I$(ROOT)/include -DSOLARIS -D__EXTENSIONS__ $(EXTRA)
 
+RANLIB=echo
 AR=ar
 AWK=nawk
 LIBAPUE=$(ROOT)/lib/libapue.a

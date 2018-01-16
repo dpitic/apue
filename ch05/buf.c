@@ -72,7 +72,7 @@ int buffer_size(FILE *fp) { return (fp->_bf._size); }
 
 #ifdef _LP64
 #define _flag __pad[4]
-#define _prt __pad[1]
+#define _ptr __pad[1]
 #define _base __pad[2]
 #endif
 

@@ -21,7 +21,7 @@ ifeq "$(PLATFORM)" "freebsd"
 endif
 ifeq "$(PLATFORM)" "solaris"
 	BAR = barrier
-	EXTRALIBS = -lpthread -ltr
+	EXTRALIBS = -lpthread -lrt
 endif
 
 PROGS = threadid exitstatus badexit2 cleanup
