@@ -22,7 +22,13 @@ main(int argc, char *argv[])
 #else
   printf("no symbol for __BSD_VISIBLE\n");
 #endif
-  
+
+#ifdef _XOPEN_SOURCE
+  printf("_XOPEN_SOURCE defined to be %ld\n", (long)_XOPEN_SOURCE);
+#else
+  printf("no symbol for _XOPEN_SOURCE\n");
+#endif
+
 #ifdef ARG_MAX
 	printf("ARG_MAX defined to be %ld\n", (long)ARG_MAX+0);
 #else
