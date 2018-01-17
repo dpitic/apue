@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Shell script used to determine the type of Unix operating system and echo
 # an appropriate value.  This script is intened for use by Makefiles.
