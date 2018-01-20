@@ -5,6 +5,9 @@
 # JetBrains IDE configuration directory
 .idea/
 
+# NetBeans project directory
+nbproject/
+
 # Prerequisites
 *.d
 
