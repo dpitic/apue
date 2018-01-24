@@ -1,6 +1,6 @@
 /*
  * This program demonstrates a client command the communicates with a server to
- * obtain the output from a system's uptime() command.  We call this service
+ * obtain the output from a system's uptime command.  We call this service
  * "remote uptime" (or "ruptime" for short).
  */
 #include "apue.h"
@@ -10,7 +10,7 @@
 
 #define BUFLEN 128
 
-int connect_retry(int, int, int, const struct sockaddr *, socklen_t);
+extern int connect_retry(int, int, int, const struct sockaddr *, socklen_t);
 
 void print_uptime(int sockfd) {
   int n;

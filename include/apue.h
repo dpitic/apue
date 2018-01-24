@@ -49,6 +49,7 @@ typedef void Sigfunc(int);
 char *path_alloc(size_t *); /* pathalloc.c */
 long open_max(void);        /* openmax.c */
 
+int set_cloexec(int);  /* setfd.c */
 void set_fl(int, int); /* setfl.c */
 void clr_fl(int, int);
 
