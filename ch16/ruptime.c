@@ -4,8 +4,8 @@
  * "remote uptime" (or "ruptime" for short).
  */
 #include "apue.h"
-#include <netdb.h>
 #include <errno.h>
+#include <netdb.h>
 #include <sys/socket.h>
 
 #define BUFLEN 128
@@ -41,7 +41,8 @@ int main(int argc, char *argv[]) {
     err_quit("getaddrinfo() error: %s", gai_strerror(err));
   }
   for (aip = ailist; aip != NULL; aip->ai_next) {
-    if ((sockfd = connect_retry(aip->ai_family, SOCK_STREAM, 0, aip->ai_addr, aip->ai_addrlen)) < 0) {
+    if ((sockfd = connect_retry(aip->ai_family, SOCK_STREAM, 0, aip->ai_addr,
+                                aip->ai_addrlen)) < 0) {
       err = errno;
     } else {
       print_uptime(sockfd);
