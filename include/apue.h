@@ -60,6 +60,8 @@ Sigfunc *signal_intr(int, Sigfunc *); /* signalintr.c */
 
 void daemonize(const char *); /* daemonize.c */
 
+int fd_pipe(int *);                        /* spipe.c */
+
 ssize_t readn(int, void *, size_t);        /* readn.c */
 ssize_t writen(int, const void *, size_t); /* writen.c */
 
