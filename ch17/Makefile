@@ -5,6 +5,9 @@ include $(ROOT)/Make.defines.$(PLATFORM)
 ifeq "$(PLATFORM)" "freebsd"
   EXTRALIBS=-pthread
 endif
+ifeq "$(PLATFORM)" "openbsd"
+  EXTRALIBS=-pthread
+endif
 ifeq "$(PLATFORM)" "linux"
   EXTRALIBS=-pthread
 endif
@@ -12,7 +15,7 @@ ifeq "$(PLATFORM)" "solaris"
   EXTRALIBS=-lsocket -lnsl
 endif
 
-PROGS =	pollmsg
+PROGS =	pollmsg sendmsg bindunix
 FDPASS =
 
 all:	$(PROGS) $(FDPASS)
@@ -24,7 +27,7 @@ all:	$(PROGS) $(FDPASS)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
 
 clean:
-	rm -f $(PROGS) $(TEMPFILES) *.o
+	rm -f $(PROGS) $(TEMPFILES) *.o *.socket
 #	for i in open opend open.fe opend.fe; do \
 #		(cd $$i && $(MAKE) clean) || exit 1; \
 #	done

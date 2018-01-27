@@ -66,6 +66,12 @@ int main() {
 
     printf("queue ID %d is %d\n", i, qid[i]);
 
+    /*
+     * Using datagram (SOCK_DGRAM) sockets instead of stream sockets enables
+     * retention of message boundaries, so only one message at a time is read
+     * when the socket is read.  This technique allows use of either poll() or
+     * select() with message queues.
+     */
     if (socketpair(AF_UNIX, SOCK_DGRAM, 0, fd) < 0) {
       err_sys("socketpair() error");
     }
