@@ -62,6 +62,10 @@ void daemonize(const char *); /* daemonize.c */
 
 int fd_pipe(int *);                        /* spipe.c */
 
+int serv_listen(const char *);             /* servlisten.c */
+int serv_accept(int, uid_t *);             /* servaccept.c */
+int cli_conn(const char *);                /* cliconn.c */
+
 ssize_t readn(int, void *, size_t);        /* readn.c */
 ssize_t writen(int, const void *, size_t); /* writen.c */
 
