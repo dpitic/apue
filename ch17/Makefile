@@ -18,6 +18,21 @@ endif
 PROGS =	pollmsg sendmsg bindunix
 FDPASS =
 
+# FreeBSD, OpenBSD and Linux provide support for sending credentials over UNIX
+# domain sockets.  macOS credential passing is disabled, and Solaris 10 doesn't
+# support sending credentials over UNIX domain sockets; although it supports the
+# ability to obtain the credentials of a process passing a file descriptor over
+# STREAMS pipe.
+ifeq "$(PLATFORM)" "linux"
+	FDPASS = recvfd2.o sendfd2.o
+endif
+ifeq "$(PLATFORM)" "freebsd"
+	FDPASS = recvfd2.o sendfd2.o
+endif
+ifeq "$(PLATFORM)" "openbsd"
+	FDPASS = recvfd2.o sendfd2.o
+endif
+
 all:	$(PROGS) $(FDPASS)
 #	for i in open opend open.fe opend.fe; do \
 #		(cd $$i && $(MAKE) ) || exit 1; \

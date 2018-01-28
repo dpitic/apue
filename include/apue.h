@@ -61,13 +61,16 @@ Sigfunc *signal_intr(int, Sigfunc *); /* signalintr.c */
 void daemonize(const char *); /* daemonize.c */
 
 int fd_pipe(int *);                        /* spipe.c */
+int recv_fd(int, ssize_t (*func)(int, const void *, size_t));		/* recvfd.c */
+int send_fd(int, int);											/* sendfd.c */
+int send_err(int, int, const char *);				/* senderr.c */
 
-int serv_listen(const char *);             /* servlisten.c */
-int serv_accept(int, uid_t *);             /* servaccept.c */
-int cli_conn(const char *);                /* cliconn.c */
+int serv_listen(const char *);             	/* servlisten.c */
+int serv_accept(int, uid_t *);             	/* servaccept.c */
+int cli_conn(const char *);                	/* cliconn.c */
 
-ssize_t readn(int, void *, size_t);        /* readn.c */
-ssize_t writen(int, const void *, size_t); /* writen.c */
+ssize_t readn(int, void *, size_t);        	/* readn.c */
+ssize_t writen(int, const void *, size_t); 	/* writen.c */
 
 /* Simplified signal() prototype for cross-platform implementation */
 /* Sigfunc *signal(int, Sigfunc *); */

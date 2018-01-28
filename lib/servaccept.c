@@ -36,9 +36,9 @@ int serv_accept(int listenfd, uid_t *uidptr) {
   /*
    * Server blocks in accept() waiting for the client to call cli_conn().
    * accept() returns a new descriptor that is connected to the client.  Also,
-   * the pathname that the client assigned to its socked (the name that contained
-   * the client's process ID) is returned by accept() through its second
-   * argument (pointer to struct sockaddr).
+   * the pathname that the client assigned to its socked (the name that
+   * contained the client's process ID) is returned by accept() through its
+   * second argument (pointer to struct sockaddr).
    */
   if ((clifd = accept(listenfd, (struct sockaddr *)&un, &len)) < 0) {
     free(name);
