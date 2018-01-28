@@ -12,9 +12,11 @@
 
 #define QLEN 10
 
-/*
+/**
  * Create a server endpoint of a connection with a well-known pathname, name.
- * Returns fd if all OK, < 0 on error.
+ * @param name well-known pathname in the file system that the server listens
+ * to.
+ * @return fd if all OK, < 0 on error.
  */
 int serv_listen(const char *name) {
   int fd, len, err, rval;
@@ -44,6 +46,10 @@ int serv_listen(const char *name) {
     goto errout;
   }
 
+  /*
+   * When a connection request from a client arrives, the server calls the
+   * serv_accept() function.
+   */
   if (listen(fd, QLEN) < 0) {  /* tell kernel we're a server */
     rval = -4;
     goto errout;
