@@ -30,7 +30,8 @@ ifeq "$(PLATFORM)" "freebsd"
 	FDPASS = recvfd2.o sendfd2.o
 endif
 ifeq "$(PLATFORM)" "openbsd"
-	FDPASS = recvfd2.o sendfd2.o
+#	FDPASS = recvfd2.o sendfd2.o
+	FDPASS =
 endif
 
 all:	$(PROGS) $(FDPASS)
