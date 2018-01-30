@@ -23,7 +23,8 @@ CFLAGS=-ansi -I$(ROOT)/include -Wall -DBSD -D__BSD_VISIBLE \
 -D_BSD_SOURCE $(EXTRA) -g
 
 # Flags for clang compiler
-# CFLAGS=-I$(ROOT)/include -Wall -DBSD -D__BSD_VISIBLE $(EXTRA)
+# CFLAGS=-std=c99 -I$(ROOT)/include -Wall -DBSD -D__BSD_VISIBLE -D_BSD_SOURCE \
+$(EXTRA)
 
 RANLIB=ranlib
 AR=ar

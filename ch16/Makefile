@@ -9,6 +9,11 @@ endif
 PROGS = ruptime ruptimed ruptimed-fd ruptimed-dg
 MOREPROGS = findsvc ruptime-dg
 
+ifeq "$(PLATFORM)" "openbsd"
+# AI_V4MAPPED and AI_ALL not defined in OpenBSD; findsvc won't compile
+	MOREPROGS = ruptime-dg
+endif
+
 all:	$(PROGS) $(MOREPROGS) clconn.o clconn2.o initsrv1.o initsrv2.o
 
 %:	%.c $(LIBAPUE)

@@ -10,10 +10,10 @@
 
 case `./systype.sh` in
 "freebsd")
-    cp .clang_complete.bsd .clang_complete
+    cp .clang_complete.freebsd .clang_complete
     ;;
 "openbsd")
-    cp .clang_complete.bsd .clang_complete
+    cp .clang_complete.openbsd .clang_complete
     ;;
 "linux")
     cp .clang_complete.linux .clang_complete
