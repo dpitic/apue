@@ -30,22 +30,22 @@ ifeq "$(PLATFORM)" "freebsd"
 	FDPASS = recvfd2.o sendfd2.o
 endif
 ifeq "$(PLATFORM)" "openbsd"
-#	FDPASS = recvfd2.o sendfd2.o
-	FDPASS =
+	FDPASS = recvfd2.o sendfd2.o
+#	FDPASS =
 endif
 
 all:	$(PROGS) $(FDPASS)
-#	for i in open opend open.fe opend.fe; do \
-#		(cd $$i && $(MAKE) ) || exit 1; \
-#	done
+	for i in open.fe opend.fe; do \
+		(cd $$i && $(MAKE) ) || exit 1; \
+	done
 
 %:	%.c $(LIBAPUE)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
 
 clean:
 	rm -f $(PROGS) $(TEMPFILES) *.o *.socket
-#	for i in open opend open.fe opend.fe; do \
-#		(cd $$i && $(MAKE) clean) || exit 1; \
-#	done
+	for i in open.fe opend.fe; do \
+		(cd $$i && $(MAKE) clean) || exit 1; \
+	done
 
 include $(ROOT)/Make.libapue.inc

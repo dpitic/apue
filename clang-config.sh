@@ -11,15 +11,19 @@
 case `./systype.sh` in
 "freebsd")
     cp .clang_complete.freebsd .clang_complete
+    cp .clang_complete.freebsd .clang
     ;;
 "openbsd")
     cp .clang_complete.openbsd .clang_complete
+    cp .clang_complete.openbsd .clang
     ;;
 "linux")
     cp .clang_complete.linux .clang_complete
+    cp .clang_complete.linux .clang
     ;;
 "macos")
     cp .clang_complete.macos .clang_complete
+    cp .clang_complete.macos .clang
     ;;
 *)
     echo "Unknown platform" >&2

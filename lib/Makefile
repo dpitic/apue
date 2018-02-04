@@ -9,7 +9,7 @@ LIBMISC = libapue.a
 OBJS = error.o pathalloc.o openmax.o setfl.o clrfl.o prexit.o tellwait.o \
 		signal.o prmask.o signalintr.o daemonize.o lockreg.o locktest.o \
 		readn.o writen.o setfd.o spipe.o servlisten.o servaccept.o cliconn.o \
-		senderr.o sendfd.o recvfd.o
+		senderr.o sendfd.o recvfd.o bufargs.o
 
 all:	$(LIBMISC) sleep.o
 
