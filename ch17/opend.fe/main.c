@@ -1,7 +1,7 @@
 /*
  * The main() function of the open server, opend.  It reads requests from the
  * client on the fd-pipe (its standard input) and calls the function
- * handle_request() which implements the request logic.
+ * handle_request(), which implements the open server request logic.
  */
 #include "opend.h"
 

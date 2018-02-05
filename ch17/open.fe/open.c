@@ -1,23 +1,29 @@
-/*
- * Implementation of server function that does the fork() and exec().
- */
 #include "open.h"
 #include <sys/uio.h> /* struct iovec */
 
 /**
- * Open the file by sending the "name" and "oflag" to the connection server
- * and reading a file descriptor back.
+ * Implementation of the open server client function that does the fork() and
+ * exec() of the server.  Open the file by sending the "name" and "oflag" to the
+ * connection server and reading a file descriptor back.  The custom
+ * communication protocol between the client and server is:
+ *   1. Client sends a request of the form "open <pathname> <openmode>\0"
+ *      across the fd-pipe to the server.  The <openmode> is the numeric value
+ *      in ASCII decimal, of the second argument to the open() function.  This
+ *      request string is terminated by a null byte.
+ *   2. The server sends back an open descriptor (by calling send_fd()), or an
+ *      error (by calling send_err()).
  * @param name file name to open.
  * @param oflag file mode.
+ * @return open descriptor on success; < 0 on error.
  */
 int csopen(char *name, int oflag) {
   pid_t pid;
   int len;
   char buf[10];
   struct iovec iov[3];
-  static int fd[2] = {-1, 1};
+  static int fd[2] = {-1, -1};
 
-  if (fd[0] < 0) { /* fork()/exec() our open server first time */
+  if (fd[0] < 0) { /* fork()/exec() open server first time */
     if (fd_pipe(fd) < 0) {
       err_ret("fd_pipe() error");
       return (-1);
@@ -42,7 +48,7 @@ int csopen(char *name, int oflag) {
   }
   sprintf(buf, " %d", oflag);    /* oflag to ascii */
   iov[0].iov_base = CL_OPEN " "; /* string contatenation */
-  iov[0].iov_len = strlen(CL_OPEN);
+  iov[0].iov_len = strlen(CL_OPEN) + 1;
   iov[1].iov_base = name;
   iov[1].iov_len = strlen(name);
   iov[2].iov_base = buf;

@@ -1,14 +1,12 @@
-/*
- * Open server request handling function.
- */
 #include "opend.h"
 #include <fcntl.h>
 
 /**
- * Implements the open server request logic process a client's request and send
- * back the descriptor across the fd-pipe (its standard output).  If an error
- * is encountered, it sends back an error message, using the custom defined
- * client-server protocol.
+ * Open server request handling function.
+ * Implements the open server request logic to process a client's request and
+ * send back the descriptor across the fd-pipe (its standard output).  If an
+ * error is encountered, it sends back an error message, using the custom
+ * defined client-server protocol.
  */
 void handle_request(char *buf, int nread, int fd) {
   int newfd;

@@ -1,6 +1,3 @@
-/*
- * Receive a file descriptor.
- */
 #include "apue.h"
 #include <sys/socket.h> /* struct msghdr */
 

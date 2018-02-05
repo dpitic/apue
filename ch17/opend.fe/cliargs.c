@@ -13,7 +13,7 @@ int cli_args(int argc, char **argv) {
     strcpy(errmsg, "Usage: <pathname> <oflag>\n");
     return (-1);
   }
-  pathname = argv[0]; /* save ptr to pathname to open */
+  pathname = argv[1]; /* save ptr to pathname to open */
   oflag = atoi(argv[2]);
   return (0);
 }

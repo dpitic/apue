@@ -1,3 +1,6 @@
+/*
+ * Open server client include file.
+ */
 #include "apue.h"
 #include <errno.h>
 
