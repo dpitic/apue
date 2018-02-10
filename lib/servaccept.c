@@ -1,9 +1,9 @@
 /*
- * This function is used by a server to wait for a client's connected request to
- * arrive.  When one arrives, the system automatically creates a new UNIX domain
- * socket, connects it to the client's socket, and returns the new socket to the
- * server.  Additionally, the effective user ID of the client is stored in the
- * memory to which uidptr points.
+ * This function is used by a server to wait for a client's connected request
+ * to arrive.  When one arrives, the system automatically creates a new UNIX
+ * domain socket, connects it to the client's socket, and returns the new
+ * socket to the server.  Additionally, the effective user ID of the client is
+ * stored in the memory to which uidptr points.
  */
 #include "apue.h"
 #include <errno.h>
@@ -28,7 +28,7 @@ int serv_accept(int listenfd, uid_t *uidptr) {
   char *name;
 
   /* Allocate enough space for longest name plus terminating null */
-  if ((name = malloc(sizeof(un.sun_path + 1))) == NULL) {
+  if ((name = malloc(sizeof(un.sun_path) + 1)) == NULL) {
     return (-1);
   }
   len = sizeof(un);
@@ -36,7 +36,7 @@ int serv_accept(int listenfd, uid_t *uidptr) {
   /*
    * Server blocks in accept() waiting for the client to call cli_conn().
    * accept() returns a new descriptor that is connected to the client.  Also,
-   * the pathname that the client assigned to its socked (the name that
+   * the pathname that the client assigned to its socket (the name that
    * contained the client's process ID) is returned by accept() through its
    * second argument (pointer to struct sockaddr).
    */

@@ -35,7 +35,7 @@ ifeq "$(PLATFORM)" "openbsd"
 endif
 
 all:	$(PROGS) $(FDPASS)
-	for i in open.fe opend.fe; do \
+	for i in open open.fe opend.fe; do \
 		(cd $$i && $(MAKE) ) || exit 1; \
 	done
 
@@ -44,7 +44,7 @@ all:	$(PROGS) $(FDPASS)
 
 clean:
 	rm -f $(PROGS) $(TEMPFILES) *.o *.socket
-	for i in open.fe opend.fe; do \
+	for i in open open.fe opend.fe; do \
 		(cd $$i && $(MAKE) clean) || exit 1; \
 	done
 

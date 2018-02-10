@@ -1,14 +1,14 @@
 /*
  * This function can be used by a server to announce its willingness to listen
  * for client connect requests on a well-known name (some pathname in the file
- * system).  Clients will use this name when they want to connect to the server.
- * The return value is the server's UNIX domain socket used to receive client
- * connection requests.
+ * system).  Clients will use this name when they want to connect to the
+ * server.  The return value is the server's UNIX domain socket used to receive
+ * client connection requests.
  */
 #include "apue.h"
+#include <errno.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <errno.h>
 
 #define QLEN 10
 
@@ -24,18 +24,18 @@ int serv_listen(const char *name) {
 
   if (strlen(name) >= sizeof(un.sun_path)) {
     errno = ENAMETOOLONG;
-    return(-1);
+    return (-1);
   }
 
   /* Create a UNIX domain stream socket */
   if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-    return(-2);
+    return (-2);
   }
 
-  unlink(name);       /* in case it already exists */
+  unlink(name); /* in case it already exists */
 
   /* Fill in socket address structure */
-  memset(&un, 0, sizeof(un));
+  memset(&un, 0, sizeof(un)); /* initialise struct */
   un.sun_family = AF_UNIX;
   strcpy(un.sun_path, name);
   len = offsetof(struct sockaddr_un, sun_path) + strlen(name);
@@ -50,15 +50,15 @@ int serv_listen(const char *name) {
    * When a connection request from a client arrives, the server calls the
    * serv_accept() function.
    */
-  if (listen(fd, QLEN) < 0) {  /* tell kernel we're a server */
+  if (listen(fd, QLEN) < 0) { /* tell kernel we're a server */
     rval = -4;
     goto errout;
   }
-  return(fd);
+  return (fd);
 
- errout:
+errout:
   err = errno;
   close(fd);
   errno = err;
-  return(rval);
+  return (rval);
 }
