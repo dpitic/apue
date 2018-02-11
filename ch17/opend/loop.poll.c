@@ -3,6 +3,16 @@
 
 #define NALLOC 10 /* # pollfd structs to alloc/realloc */
 
+/**
+ * Dynamically reallocate memory for the array of pollfd structures, which was
+ * originally allocated in the main loop, in order to accommodate more elements.
+ * The maximum number of clients is limited by the maximum number of open
+ * descriptors possible.
+ * @param pfd pointer to pollfd structure array to grow in size.
+ * @param maxfd pointer to maximum size of pollfd structure array.
+ * @return pointer to pollfd structure array that has been re-sized with an
+ * additional number of elements equal to the original allocated size.
+ */
 static struct pollfd *grow_pollfd(struct pollfd *pfd, int *maxfd) {
   int i;
   int oldmax = *maxfd;
@@ -11,10 +21,12 @@ static struct pollfd *grow_pollfd(struct pollfd *pfd, int *maxfd) {
   if ((pfd = realloc(pfd, newmax * sizeof(struct pollfd))) == NULL) {
     err_sys("realloc() error");
   }
+  /* Initialise new elements */
   for (i = oldmax; i < newmax; i++) {
-    pfd[i].fd = -1;
-    pfd[i].events = POLLIN; /* events to look for */
-    pfd[i].revents = 0;     /* events returned */
+    pfd[i].fd = -1; /* clear revents; also prevents this fd being checked */
+    /* Initialise to look for new request from existing client (events) */
+    pfd[i].events = POLLIN;
+    pfd[i].revents = 0; /* events returned */
   }
   *maxfd = newmax;
   return (pfd);
@@ -36,8 +48,10 @@ void loop(void) {
   if ((pollfd = malloc(NALLOC * sizeof(struct pollfd))) == NULL) {
     err_sys("malloc() error");
   }
+  /* Initialise new elements */
   for (i = 0; i < NALLOC; i++) {
-    pollfd[i].fd = -1;
+    pollfd[i].fd = -1; /* clear revents; also prevents this fd being checked */
+    /* Initialise to look for new request from existing client (events) */
     pollfd[i].events = POLLIN;
     pollfd[i].revents = 0;
   }
@@ -50,10 +64,12 @@ void loop(void) {
   pollfd[0].fd = listenfd;
 
   for (;;) {
-    if (poll(pollfd, numfd, -1) < 0) {
+    /* Synchronous I/O multiplexing using poll() system call */
+    if (poll(pollfd, numfd, -1) < 0) { /* block indefinitely */
       log_sys("poll() error");
     }
 
+    /* Check arrival of new client connection on listenfd descriptor */
     if (pollfd[0].revents & POLLIN) {
       /* Accept new client request */
       if ((clifd = serv_accept(listenfd, &uid)) < 0) {
@@ -65,6 +81,7 @@ void loop(void) {
       if (numfd == maxfd) {
         pollfd = grow_pollfd(pollfd, &maxfd);
       }
+      /* Add client to pollfd array */
       pollfd[numfd].fd = clifd;
       pollfd[numfd].events = POLLIN;
       pollfd[numfd].revents = 0;
@@ -72,16 +89,29 @@ void loop(void) {
       log_msg("New connection: uid %d, fd %d", uid, clifd);
     }
 
+    /*
+     * Traverse pollfd array checking for events from existing clients
+     *   1. New request from an existing client.
+     *   2. Client connection termination.
+     */
     for (i = 1; i < numfd; i++) {
+      /* Check client connection termination event */
       if (pollfd[i].revents & POLLHUP) {
         goto hungup;
-      } else if (pollfd[i].revents & POLLIN) {
+      } else if (pollfd[i].revents & POLLIN) { /* new request event */
         /* Read argument buffer from client */
         if ((nread = read(pollfd[i].fd, buf, MAXLINE)) < 0) {
           log_sys("read() error on fd %d", pollfd[i].fd);
         } else if (nread == 0) {
         hungup:
-          /* The client closed the connection */
+          /*
+           * The client closed the connection while there is still data to be
+           * read from the server's end of the connection.  Even though the
+           * endpoint is marked as hung up, the server can still read all the
+           * data queued on its end.  However, there is no point processing
+           * the request because the server can't send any response back.  Just
+           * close the connection to the client, throwing away any queued data.
+           */
           log_msg("Closed: uid %d, fd %d", client[i].uid, pollfd[i].fd);
           client_del(pollfd[i].fd);
           close(pollfd[i].fd);

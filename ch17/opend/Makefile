@@ -6,9 +6,9 @@ ifeq "$(PLATFORM)" "solaris"
 	EXTRALIBS=-lsocket -lnsl
 endif
 
-PROGS = open.poll opend.select
+PROGS = opend.poll opend.select
 
-all:	$(POROGS)
+all:	$(PROGS)
 
 opend.poll:	main.o request.o cliargs.o client.o loop.poll.o $(LIBAPUE)
 	$(CC) $(CFLAGS) -o opend.poll main.o cliargs.o client.o request.o \

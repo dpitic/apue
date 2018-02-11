@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
   opterr = 0; /* don't want getopt() writing to stderr */
   while ((c = getopt(argc, argv, "d")) != EOF) {
     switch (c) {
-    case 'd':
+    case 'd':  /* debug */
       debug = log_to_stderr = 1;
       break;
     case '?':
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (debug) {
+  if (debug == 0) {
     daemonize("opend");
   }
 
