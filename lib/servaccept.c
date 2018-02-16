@@ -1,5 +1,5 @@
 /*
- * This function is used by a server to wait for a client's connected request
+ * This function is used by a server to wait for a client's connection request
  * to arrive.  When one arrives, the system automatically creates a new UNIX
  * domain socket, connects it to the client's socket, and returns the new
  * socket to the server.  Additionally, the effective user ID of the client is
@@ -14,7 +14,8 @@
 #define STALE 30 /* client's name can't be older than this (sec.) */
 
 /**
- * Wait for a client connection to arrive, and accept it.
+ * Wait for a client connection to arrive, and accept it.  Obtain the client's
+ * user ID from the pathname.
  * @param listenfd UNIX socket domain file descriptor the server listens on.
  * @param uidptr client's user ID.
  * @return new file descriptor on success, < 0 on error.
