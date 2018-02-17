@@ -15,20 +15,17 @@
 		"linters":
 		{
 			"clang": {
-				"extra_flags": "-Wall -DLINUX -D_GNU_SOURCE -I${project_folder}/include",
+				"extra_flags": "-Wall -DLINUX -D_GNU_SOURCE",
 				"include_dirs": [
-                	"/usr/lib/clang/4.0.1/include",
-					"/usr/include/x86_64-linux-gnu",
 					"/usr/include",
+					"/usr/lib/clang/5.0.1/include",
+                	"/usr/lib/clang/4.0.1/include",
 					"${project_folder}/include"
 				]
 			},
 			"gcc": {
-				"extra_flags": "-Wall -DLINUX -D_GNU_SOURCE -I${project_folder}/include",
+				"extra_flags": "-Wall -DLINUX -D_GNU_SOURCE",
 				"include_dirs": [
-                	"/usr/lib/gcc/x86_64-linux-gnu/7/include",
-                	"/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed",
-					"/usr/include/x86_64-linux-gnu",
 					"/usr/include",
 					"${project_folder}/include"
 				]
