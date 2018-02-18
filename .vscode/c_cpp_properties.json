@@ -30,6 +30,7 @@
                 "/usr/include",
                 "/usr/lib/clang/5.0.1/include",
                 "/usr/lib/clang/4.0.1/include",
+                "/usr/include/x86_64-linux-gnu",
                 "${workspaceRoot}/include"
             ],
             "defines": [
@@ -41,6 +42,7 @@
                     "/usr/include",
                     "/usr/lib/clang/5.0.1/include",
                     "/usr/lib/clang/4.0.1/include",
+                    "/usr/include/x86_64-linux-gnu",
                     "${workspaceRoot}/include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,

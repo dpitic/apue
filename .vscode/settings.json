@@ -3,6 +3,7 @@
         "signal.h": "c",
         "apue.h": "c",
         "stddef.h": "c",
-        "time.h": "c"
+        "time.h": "c",
+        "stat.h": "c"
     }
 }
