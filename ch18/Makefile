@@ -2,14 +2,14 @@ ROOT=..
 PLATFORM=$(shell $(ROOT)/systype.sh)
 include $(ROOT)/Make.defines.$(PLATFORM)
 
-PROGS = settty csize
+PROGS = settty csize t_isatty
 
-all:	$(PROGS)
+all:	$(PROGS) ctermid.o isatty.o ttyname.o
 
 %:	%.c $(LIBAPUE)
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LDLIBS)
 
 clean:
-	rm -r $(PROGS) $(TEMPFILES) *.o
+	rm -f $(PROGS) $(TEMPFILES) *.o
 
 include $(ROOT)/Make.libapue.inc
