@@ -53,3 +53,98 @@ static void add(char *dirname) {
     tail = ddp;
   }
 }
+
+static void cleanup(void) {
+  struct devdir *ddp, *nddp;
+
+  ddp = head;
+  while (ddp != NULL) {
+    nddp = ddp->d_next;
+    free(ddp->d_name);
+    free(ddp);
+    ddp = nddp;
+  }
+  head = NULL;
+  tail = NULL;
+}
+
+static char *searchdir(char *dirname, struct stat *fdstatp) {
+  struct stat devstat;
+  DIR *dp;
+  int devlen;
+  struct dirent *dirp;
+
+  strcpy(pathname, dirname);
+  if ((dp = opendir(dirname)) == NULL) {
+    return (NULL);
+  }
+  strcat(pathname, "/");
+  devlen = strlen(pathname);
+  while ((dirp = readdir(dp)) != NULL) {
+    strncpy(pathname + devlen, dirp->d_name, _POSIX_PATH_MAX - devlen);
+    /*
+     * Skip aliases
+     */
+    if (strcmp(pathname, "/dev/stdin") == 0 ||
+        strcmp(pathname, "/dev/stdout") == 0 ||
+        strcmp(pathname, "/dev/stderr") == 0) {
+      continue;
+    }
+    if (stat(pathname, &devstat) < 0) {
+      continue;
+    }
+    if (S_ISDIR(devstat.st_mode)) {
+      add(pathname);
+      continue;
+    }
+    if (devstat.st_ino == fdstatp->st_ino &&
+        devstat.st_dev == fdstatp->st_dev) { /* found a match */
+      closedir(dp);
+      return (pathname);
+    }
+  }
+
+  closedir(dp);
+  return (NULL);
+}
+
+/**
+ * Return a pointer to the pathname of the terminal device that is open on the
+ * file descriptor fd, or NULL on error.
+ * @param fd open file descriptor for the terminal device.
+ * @return pointer to pathname of the terminal device open on fd on success;
+ * NULL on error.
+ */
+char *ttyname(int fd) {
+  struct stat fdstat;
+  struct devdir *ddp;
+  char *rval;
+
+  if (isatty(fd) == 0) {
+    return (NULL);
+  }
+  if (fstat(fd, &fdstat) < 0) {
+    return (NULL);
+  }
+  if (S_ISCHR(fdstat.st_mode) == 0) {
+    return (NULL);
+  }
+
+  /*
+   * Read the /dev directory, looking for an entry with the same device number
+   * and i-node number.  It assumes that when matching entry is found, the
+   * desired directory entry has been located.  A matching device number and
+   * i-node number pair is unique on a UNIX system.
+   */
+  rval = searchdir("/dev", &fdstat);
+  if (rval == NULL) {
+    for (ddp = head; ddp != NULL; ddp = ddp->d_next) {
+      if ((rval = searchdir(ddp->d_name, &fdstat)) != NULL) {
+        break;
+      }
+    }
+  }
+
+  cleanup();
+  return (rval);
+}
