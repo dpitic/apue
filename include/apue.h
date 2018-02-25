@@ -70,6 +70,13 @@ int serv_accept(int, uid_t *);                   /* servaccept.c */
 int cli_conn(const char *);                      /* cliconn.c */
 int buf_args(char *, int (*func)(int, char **)); /* bufargs.c */
 
+/* Implemented in ttymodes.c */
+int tty_cbreak(int);
+int tty_raw(int);
+int tty_reset(int);
+void tty_atexit(void);
+struct termios *tty_termios(void);
+
 ssize_t readn(int, void *, size_t);        /* readn.c */
 ssize_t writen(int, const void *, size_t); /* writen.c */
 
