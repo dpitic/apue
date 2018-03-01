@@ -34,6 +34,9 @@ int main(void)
     printf("Unknown bits/byte\n");
   }
 
+  /*
+   * To use the mask, first zero the bits using the mask, and then set a value.
+   */
   term.c_cflag &= ~CSIZE;    /* zero out the bits */
   term.c_cflag |= CS8;       /* set 8 bits/byte */
   if (tcsetattr(STDIN_FILENO, TCSANOW, &term) < 0) {
