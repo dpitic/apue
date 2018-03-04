@@ -19,7 +19,7 @@ int main(void)
   }
 
   /*
-   * POSIX.1 enable termainal special characters to be disabled by setting the
+   * POSIX.1 enable terminal special characters to be disabled by setting the
    * value of an entry in the c_cc[] array to the value _POSIX_VDISABLE.  First
    * check this is supported on the platform.
    */

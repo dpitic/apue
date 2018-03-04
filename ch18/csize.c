@@ -2,7 +2,7 @@
  * This program demonstrates the use of masks to extract and set a value.  It
  * prints the mask size of the CSIZE control mode flag, which specifies the 
  * number of bits per type for both transmission and reception.  This size
- * does not include theparity bit, if any.  The values for the field defined
+ * does not include the parity bit, if any.  The values for the field defined
  * by this mask are CS5, CS6, CS7 and CS8, for 5, 6, 7, and 8 bits/byte,
  * respectively.
  */
