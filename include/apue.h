@@ -77,9 +77,13 @@ int tty_reset(int);
 void tty_atexit(void);
 struct termios *tty_termios(void);
 
-/* Pseudo terminal handling functions */
+/* Pseudo terminal handling functions; ptyopen.c */
 int ptym_open(char *, int);
 int pyts_open(char *);
+#ifdef TIOGCWINSZ
+pid_t pty_fork(int *, char *, int, const struct termios *,
+               const struct winsize *); /* ptyfork.c */
+#endif                                  // TIOGCWINSZ
 
 ssize_t readn(int, void *, size_t);        /* readn.c */
 ssize_t writen(int, const void *, size_t); /* writen.c */
