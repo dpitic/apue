@@ -77,6 +77,10 @@ int tty_reset(int);
 void tty_atexit(void);
 struct termios *tty_termios(void);
 
+/* Pseudo terminal handling functions */
+int ptym_open(char *, int);
+int pyts_open(char *);
+
 ssize_t readn(int, void *, size_t);        /* readn.c */
 ssize_t writen(int, const void *, size_t); /* writen.c */
 
