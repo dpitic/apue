@@ -55,7 +55,7 @@ errout:
  * @param pointer to name of master PTY.
  * @return file descriptor of PTY slave on success; -1 on error.
  */
-int pyts_open(char *pts_name) {
+int ptys_open(char *pts_name) {
   int fds;
 #if defined(SOLARIS)
   int err, setup;
