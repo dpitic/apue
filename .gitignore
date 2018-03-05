@@ -8,6 +8,9 @@
 # NetBeans project directory
 nbproject/
 
+# Xcode project directory
+*.xcodeproj/
+
 # Prerequisites
 *.d
 
