@@ -80,7 +80,7 @@ struct termios *tty_termios(void);
 /* Pseudo terminal handling functions; ptyopen.c */
 int ptym_open(char *, int);
 int ptys_open(char *);
-#ifdef TIOGCWINSZ
+#ifdef TIOCGWINSZ
 pid_t pty_fork(int *, char *, int, const struct termios *,
                const struct winsize *); /* ptyfork.c */
 #endif                                  /* TIOGCWINSZ */
