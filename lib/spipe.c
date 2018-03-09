@@ -7,7 +7,7 @@
 #include "apue.h"
 #include <sys/socket.h>
 
-/*
+/**
  * Return a full-duplex pipe (a UNIX domain socket) with the two file
  * descriptors returned in fd[0] and fd[1];
  */

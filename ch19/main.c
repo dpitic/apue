@@ -7,6 +7,8 @@
 #define OPTSTR "d:einv"
 #endif
 
+#define USAGE "Usage: %s [ -d driver -einv ] program [ arg ... ]"
+
 static void set_noecho(int);    /* at the end of this file */
 void do_driver(char *);         /* in the file driver.c */
 void loop(int, int);            /* in the file loop.c */
@@ -56,12 +58,12 @@ int main(int argc, char *argv[]) {
       verbose = 1;
       break;
     case '?':
-      err_quit("Unrecognised option -%c", optopt);
+      err_quit(USAGE, argv[0]);
     }
   }
 
   if (optind >= argc) {
-    err_quit("Usage: %s [ -d driver -einv ] program [ arg ... ]", argv[0]);
+    err_quit(USAGE, argv[0]);
   }
 
   if (interactive) {    /* get current termios and window size */

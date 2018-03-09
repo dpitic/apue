@@ -54,9 +54,10 @@ pid_t pty_fork(int *ptrfdm, char *slave_name, int slave_namesz,
      *   2. A new process group is created for the child.
      *   3. The child loses any association it might have had with its previous
      *      controlling terminal.
-     * Under Linux, macOS and Solaris, the slave becomes the controlling terminal
-     * of this new session when ptys_open() is called.  FreeBSD requires the use
-     * of TIOCSCTTY ioctl() command to allocate the controlling terminal.
+     * Under Linux, macOS and Solaris, the slave becomes the controlling
+     * terminal of this new session when ptys_open() is called.  FreeBSD
+     * requires the use of TIOCSCTTY ioctl() command to allocate the controlling
+     * terminal.
      */
     if (setsid() < 0) {
       err_sys("setsid() error");

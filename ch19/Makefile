@@ -10,8 +10,8 @@ PROGS = pty
 
 all:	$(PROGS)
 
-pty:	main.o loop.o $(LIBAPUE)
-	$(CC) $(CFLAGS) -o pty main.o loop.o $(LDFLAGS) $(LDLIBS)
+pty:	main.o loop.o driver.o $(LIBAPUE)
+	$(CC) $(CFLAGS) -o pty main.o loop.o driver.o $(LDFLAGS) $(LDLIBS)
 
 clean:
 	rm -f $(PROGS) $(TEMPFILES) *.o
