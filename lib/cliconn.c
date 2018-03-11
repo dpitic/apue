@@ -43,7 +43,7 @@ int cli_conn(const char *name) {
    * Don't let the system choose a default address for the client, because the
    * server wouldn't be able to distinguish between clients (if we don't
    * explicitly bind a name to a UNIX domain socket, the kernel implicitly binds
-   * an address to it on our behalf and no file is created int he file system to
+   * an address to it on our behalf and no file is created in the file system to
    * represent the socket).  Instead, bind the clients address; this step is
    * usually not taken when developing a client program that uses sockets.
    */
