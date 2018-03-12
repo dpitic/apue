@@ -12,6 +12,9 @@
  */
 typedef void* DBHANDLE;
 
+/*
+ * Function prototypes for database library public functions.
+ */
 DBHANDLE db_open(const char *, int, ...);
 void db_close(DBHANDLE);
 
