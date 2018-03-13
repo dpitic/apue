@@ -21,7 +21,8 @@
 					"/usr/lib64/clang/5.0.1/include",
 					"/usr/lib/clang/5.0.1/include",
                 	"/usr/lib/clang/4.0.1/include",
-					"${project_folder}/include"
+					"${project_path}/include",
+					"${project_path}/ch20"			// database library header
 				]
 			},
 			"gcc": {

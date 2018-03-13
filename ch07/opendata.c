@@ -16,9 +16,9 @@ FILE *open_data(void) {
   if ((fp = fopen("datafile", "r")) == NULL) {
     return (NULL);
   }
-  /* Make file stream line buffered and databuf the stdio buffer */
+  /* Make file stream line buffered and datbuf the stdio buffer */
   if (setvbuf(fp, databuf, _IOLBF, BUFSIZ) != 0) {
     return (NULL);
   }
-  return (fp); /* error; fp points to databuf on the stack; not persistent  */
+  return (fp); /* error; fp points to datbuf on the stack; not persistent  */
 }
