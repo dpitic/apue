@@ -224,9 +224,40 @@ static DB *_db_alloc(int namelen) {
   if ((db->idxbuf = malloc(IDXLEN_MAX + 2)) == NULL) {
     err_dump("_db_alloc(): malloc() error for index buffer");
   }
-  if ((db->datbuf = malloc(DATALEN_MAX + 2)) == NULL) {
+  if ((db->datbuf = malloc(DATLEN_MAX + 2)) == NULL) {
     err_dump("_db_alloc(): malloc() error for data buffer");
   }
   return(db);
 } /* _db_alloc() */
 
+/**
+ * Relinquish access to the database.
+ * @param h database handle.
+ */
+void db_close(DBHANDLE h) {
+  _db_free((DB *)h);		/* closes fds, free buffers & struct */
+}
+
+/**
+ * Free up a DB structure, and all the malloc'ed buffers it may point to.  Also
+ * close the file descriptors if still open.
+ * @param db pointer to DB structure.
+ */
+static void _db_free(DB *db) {
+  if (db->idxfd >= 0) {
+    close(db->idxfd);
+  }
+  if (db->datfd >= 0) {
+    close(db->datfd);
+  }
+  if (db->idxbuf != NULL) {
+    free(db->idxbuf);
+  }
+  if (db->datbuf != NULL) {
+    free(db->datbuf);
+  }
+  if (db->name != NULL) {
+    free(db->name);
+  }
+  free(db);
+}

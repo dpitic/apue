@@ -37,7 +37,7 @@ char *db_nextkey(DBHANDLE, char *);
  */
 #define IDXLEN_MIN  6       /* key, sep, start, sep, length, \n */
 #define IDXLEN_MAX  1024    /* arbitrary */
-#define DATALEN_MIN 2       /* data byte, newline */
-#define DATALEN_MAX 1024    /* arbitrary */
+#define DATLEN_MIN  2       /* data byte, newline */
+#define DATLEN_MAX  1024    /* arbitrary */
 
 #endif /* _APUE_DB_H */
