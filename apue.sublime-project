@@ -29,7 +29,7 @@
 				"extra_flags": "-Wall -DLINUX -D_GNU_SOURCE",
 				"include_dirs": [
 					"/usr/include",
-					"${project_folder}/include"
+					"${project_path}/include"
 				]
 			}
 		}

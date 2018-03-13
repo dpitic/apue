@@ -187,4 +187,46 @@ DBHANDLE db_open(const char *pathname, int oflag, ...) {
   }
   db_rewind(db);
   return (db);
-}
+} /* db_open() */
+
+/**
+ * Allocate and initialise a DB structure and its buffers.
+ * @param namelen length of database name string (without extension).
+ * @return pointer to DB structure on success; dump core on error.
+ */
+static DB *_db_alloc(int namelen) {
+  DB *db;
+
+  /*
+   * Use calloc() to initialise the structure to zero.
+   */
+  if ((db = calloc(1, sizeof(DB))) == NULL) {
+    err_dump("_db_alloc(): calloc() error for DB");
+  }
+  /*
+   * Side effect of calloc() sets database file descriptors to 0; reset fd to -1
+   * to indicate that they are not yet valid.
+   */
+  db->idxfd = db->datfd = -1;		/* descriptors */
+
+  /*
+   * Allocate room for the name.
+   * +5 for ".idx" or ".dat" plus null at end.
+   */
+  if ((db->name = malloc(namelen + 5)) == NULL) {
+    err_dump("_db_alloc(): malloc() error for name");
+  }
+
+  /*
+   * Allocate an index buffer and a data buffer.
+   * +2 for newline and null at end.
+   */
+  if ((db->idxbuf = malloc(IDXLEN_MAX + 2)) == NULL) {
+    err_dump("_db_alloc(): malloc() error for index buffer");
+  }
+  if ((db->datbuf = malloc(DATALEN_MAX + 2)) == NULL) {
+    err_dump("_db_alloc(): malloc() error for data buffer");
+  }
+  return(db);
+} /* _db_alloc() */
+
