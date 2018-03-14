@@ -231,7 +231,8 @@ static DB *_db_alloc(int namelen) {
 } /* _db_alloc() */
 
 /**
- * Relinquish access to the database.
+ * Relinquish access to the database.  This function closes the index file and
+ * the data file and releases any memory that it allocated for internal buffers.
  * @param h database handle.
  */
 void db_close(DBHANDLE h) {
@@ -261,3 +262,99 @@ static void _db_free(DB *db) {
   }
   free(db);
 }
+
+/**
+ * Fetch a record and return a pointer to the null-terminated data.
+ * @param h database handle.
+ * @param key lookup key for the data record.
+ * @return pointer to the data stored with key, if the record is found; NULL if
+ * the record is not found.
+ */
+char *db_fetch(DBHANDLE h, const char *key) {
+  DB *db = h;
+  char *ptr;
+
+  if (_db_find_and_lock(db, key, 0) < 0) {
+    ptr = NULL;               /* error, record not found */
+    db->cnt_fetcherr++;
+  } else {
+    ptr = _db_readdat(db);    /* return pointer to data */
+    db->cnt_fetchok++;
+  }
+
+  /*
+   * Unlock the hash chain that _db_find_and_lock() locked.
+   */
+  if (un_lock(db->idxfd, db->chainoff, SEEK_SET, 1) < 0) {
+    err_dump("db_fetch(): un_lock() error");
+  }
+  return (ptr);
+} /* db_fetch() */
+
+/**
+ * Find the specified record.  Called by db_delete(), db_fetch(), and
+ * db_store().  Returns with the hash chain locked.
+ * @param db pointer to database object.
+ * @param key search key.
+ * @param writelock nonzero value to acquire a write lock on the index file
+ * while searching for the record.
+ * @return 0 if record found; -1 if record not found.
+ */
+static int _db_find_and_lock(DB *db, const char *key, int writelock) {
+  off_t offset, nextoffset;
+
+  /*
+   * Calculate the hash value for this key, then calculate the byte offset of
+   * corresponding chain ptr in hash table.  This is where the search starts.
+   * First calculate the offset in the hash table for this key.
+   */
+  db->chainoff = (_db_hash(db, key) * PTR_SZ) + db->hashoff;
+  db->ptroff = db->chainoff;
+
+  /*
+   * Lock the hash chain here.  The caller must unlock it when done.  Note,
+   * only lock and unlock the first byte.  This increases concurrency by
+   * allowing multiple processes to search different hash chains at the same
+   * time.
+   */
+  if (writelock) {
+    if (writew_lock(db->idxfd, db->chainoff, SEEK_SET, 1) < 0) {
+      err_dump("_db_find_and_lock(): writew_lock() error");
+    }
+  } else {
+    /* Read lock the index file while searching it */
+    if (readw_lock(db->idxfd, db->chainoff, SEEK_SET, 1) < 0) {
+      err_dump("_db_find_and_lock(): readw_lock() error");
+    }
+  }
+
+  /*
+   * Get the offset in the index file of first record on the hash chain
+   * (can be 0 if the hash chain is empty).
+   */
+  offset = _db_readptr(db, db->ptroff);
+  /* Loop through each index record on the hash chain, comparing keys */
+  while (offset != 0) {
+    /*
+     * Read each index record, populating idxbuf field with key of current
+     * record.  _db_readidx() returns 0 when the last entry in the chain is
+     * reached.
+     */
+    nextoffset = _db_readidx(db, offset);
+    if (strcmp(db->idxbuf, key) == 0) {
+      break;    /* match found */
+      /*
+       * ptroff contains address of previous index record
+       * datoff contains address of the data record
+       * datlen contains the size of the data record
+       */
+    }
+    db->ptroff = offset;    /* offset of this (unequal) record */
+    offset = nextoffset;    /* next one to compare; 0 == end of hash chain */
+  }
+
+  /*
+   * offset == 0 on error (record not found).
+   */
+  return (offset == 0 ? -1 : 0);
+} /* _db_find_and_lock() */
