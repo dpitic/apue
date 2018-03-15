@@ -1,4 +1,5 @@
+-I/usr/lib/clang/4.0.0/include
 -I/usr/include
 -Iinclude
--DMACOS
--D_DARWIN_C_SOURCE
+-DBSD
+-D__BSD_VISIBLE

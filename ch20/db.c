@@ -522,3 +522,105 @@ static char *_db_readdat(DB *db) {
   db->datbuf[db->datlen - 1] = 0; /* replace newline with null */
   return (db->datbuf);            /* return pointer to data record */
 } /* _db_readdat() */
+
+/**
+ * Delete the specified record.
+ * @param h database handle.
+ * @param key pointer to null-terminated key.
+ * @return 0 on success if record is found; -1 if record not found.
+ */
+int db_delete(DBHANDLE h, const char *key) {
+  DB *db = h;
+  int rc = 0;		/* assume record will be found */
+
+  /* Determine whether the record exists in the database; request write lock */
+  if (_db_find_and_lock(db, key, 1) == 0) {
+    _db_dodelete(db);		/* delete record */
+    db->cnt_delok++;
+  } else {
+    rc = -1;		/* record not found */
+    db->cnt_delerr++;
+  }
+  /* _db_find_and_lock() returns with lock still held; must release lock */
+  if (un_lock(db->idxfd, db->chainoff, SEEK_SET, 1) < 0) {
+    err_dump("db_delete(): un_lock() error");
+  }
+  return(rc);
+} /* db_delete() */
+
+/**
+ * Delete the current record specified by the DB structure.  This function is
+ * called by db_delete() and db_store(), after the record has been located by 
+ * _db_find_and_lock().
+ * @param db pointer to database structure.
+ */
+static void _db_dodelete(DB *db) {
+  int i;
+  char *ptr;
+  off_t freeptr, saveptr;
+
+  /*
+   * Set data buffer and key to all blanks.
+   */
+  for (ptr = db->datbuf, i = 0; i < db->datlen - 1; i++) {
+    *ptr++ = SPACE;
+  }
+  *ptr = 0;		/* null terminate for _db_writedat() */
+  ptr = db->idxbuf;
+  while (*ptr) {
+    *ptr++ = SPACE;
+  }
+
+  /*
+   * Have to write lock the free list to prevent two processes that are deleting
+   * records at the same time, on two different hash chains, from interfering
+   * with each other.  Since the deleted record is added to the free list, which
+   * changes the free-list pointer, only one process at a time can be doing this.
+   */
+  if (writew_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0) {
+    err_dump("_db_dodelete(): writew_lock() error");
+  }
+
+  /*
+   * Write the data record with all blanks.  No need for _db_writedat() to lock
+   * the data file in this case, since db_delete() has write locked the hash
+   * chain for this record, therefore, no other process is reading or writing
+   * this particular data record.
+   */
+  _db_writedat(db, db->datbuf, db->datoff, SEEK_SET);
+
+  /*
+   * Read the free list pointer.  Its value becomes the chain ptr field of the
+   * deleted index record.  This means the deleted record becomes the head of
+   * the free list.
+   */
+  freeptr = _db_readptr(db, FREE_OFF);
+
+  /*
+   * Save the contents of index record chain pointer, before it's rewritten by
+   * _db_writeidx().
+   */
+  saveptr = db->ptrval;
+
+  /*
+   * Rewrite the index record.  This also rewrites the length of the index
+   * record, the data offset, and the data length, none of which has changed,
+   * but that's OK.
+   */
+  _db_writeidx(db, db->idxbuf, db->idxoff, SEEK_SET, freeptr);
+
+  /*
+   * Write the new free list pointer.
+   */
+  _db_writeptr(db, FREE_OFF, db->idxoff);
+
+  /*
+   * Rewrite the chain ptr that pointed to this record being deleted.
+   * _db_find_and_lock() sets db->ptroff to point to this chain ptr.  Set this
+   * chain ptr to the contents of the deleted record's chain ptr, saveptr.
+   */
+  _db_writeptr(db, db->ptroff, saveptr);
+  if (un_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0) {
+    err_dump("_db_dodelete(): un_lock() error");
+  }
+}
