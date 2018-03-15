@@ -531,26 +531,26 @@ static char *_db_readdat(DB *db) {
  */
 int db_delete(DBHANDLE h, const char *key) {
   DB *db = h;
-  int rc = 0;		/* assume record will be found */
+  int rc = 0; /* assume record will be found */
 
   /* Determine whether the record exists in the database; request write lock */
   if (_db_find_and_lock(db, key, 1) == 0) {
-    _db_dodelete(db);		/* delete record */
+    _db_dodelete(db); /* delete record */
     db->cnt_delok++;
   } else {
-    rc = -1;		/* record not found */
+    rc = -1; /* record not found */
     db->cnt_delerr++;
   }
   /* _db_find_and_lock() returns with lock still held; must release lock */
   if (un_lock(db->idxfd, db->chainoff, SEEK_SET, 1) < 0) {
     err_dump("db_delete(): un_lock() error");
   }
-  return(rc);
+  return (rc);
 } /* db_delete() */
 
 /**
  * Delete the current record specified by the DB structure.  This function is
- * called by db_delete() and db_store(), after the record has been located by 
+ * called by db_delete() and db_store(), after the record has been located by
  * _db_find_and_lock().
  * @param db pointer to database structure.
  */
@@ -565,7 +565,7 @@ static void _db_dodelete(DB *db) {
   for (ptr = db->datbuf, i = 0; i < db->datlen - 1; i++) {
     *ptr++ = SPACE;
   }
-  *ptr = 0;		/* null terminate for _db_writedat() */
+  *ptr = 0; /* null terminate for _db_writedat() */
   ptr = db->idxbuf;
   while (*ptr) {
     *ptr++ = SPACE;
@@ -575,7 +575,8 @@ static void _db_dodelete(DB *db) {
    * Have to write lock the free list to prevent two processes that are deleting
    * records at the same time, on two different hash chains, from interfering
    * with each other.  Since the deleted record is added to the free list, which
-   * changes the free-list pointer, only one process at a time can be doing this.
+   * changes the free-list pointer, only one process at a time can be doing
+   * this.
    */
   if (writew_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0) {
     err_dump("_db_dodelete(): writew_lock() error");
@@ -622,5 +623,49 @@ static void _db_dodelete(DB *db) {
   _db_writeptr(db, db->ptroff, saveptr);
   if (un_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0) {
     err_dump("_db_dodelete(): un_lock() error");
+  }
+}
+
+/**
+ * Write a data record.  Called by _db_dodelete() (to write the record with
+ * blanks) and db_store().
+ * @param db pointer to database structure.
+ * @param data pointer to null-terminated data string to be written to db.
+ * @param offset of data record to be written.
+ * @param whence flag controls append if set to SEEK_END.
+ */
+static void _db_writedat(DB *db, const char *data, off_t offset, int whence) {
+  struct iovec iov[2];
+  static char newline = NEWLINE;
+
+  /*
+   * If appending, have to lock before doing the lseek() and write() to make the
+   * two operations atomic.  If overwriting an existing record, then no locking
+   * is necessary.
+   */
+  if (whence == SEEK_END) { /* appending, therefore lock entire file */
+    if (writew_lock(db->datfd, 0, SEEK_SET, 0) < 0) {
+      err_dump("_db_writedat(): writew_lock() error");
+    }
+  }
+
+  if ((db->datoff = lseek(db->datfd, offset, whence)) == -1) {
+    err_dump("_db_writedat(): lseek() error");
+  }
+  db->datlen = strlen(data) + 1; /* datlen includes newline */
+
+  iov[0].iov_base = (char *)data;
+  iov[0].iov_len = db->datlen - 1;
+  iov[1].iov_base = &newline;
+  iov[1].iov_len = 1;
+  if (writev(db->datfd, &iov[0], 2) != db->datlen) {
+    err_dump("_db_writedat(): writev() error of data record");
+  }
+
+  /* Release write lock held for append operation */
+  if (whence == SEEK_END) {
+    if (un_lock(db->datfd, 0, SEEK_SET, 0) < 0) {
+      err_dump("_db_writedat(): un_lock() error");
+    }
   }
 }
