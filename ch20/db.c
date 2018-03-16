@@ -669,3 +669,228 @@ static void _db_writedat(DB *db, const char *data, off_t offset, int whence) {
     }
   }
 }
+
+/**
+ * Write an index record.  _db_writedat() is called before this function to set
+ * the datoff and datlen fields in the DB structure, which is needed to write
+ * the index record.
+ * @param db pointer to database structure.
+ * @param key pointer to null-terminated key string.
+ * @param offset where to write the index record.
+ * @param whence flag controls append if set to SEEK_END.
+ * @param ptrval contents of chain ptr in index record.
+ */
+static void _db_writeidx(DB *db, const char *key, off_t offset, int whence,
+                         off_t ptrval) {
+  struct iovec iov[2];
+  char asciiptrlen[PTR_SZ + IDXLEN_SZ + 1];
+  int len;
+
+  if ((db->ptrval = ptrval) < 0 || ptrval > PTR_MAX) {
+    err_quit("_db_writeidx(): invalid ptr: %d", ptrval);
+  }
+  sprintf(db->idxbuf, "%s%c%lld%c%ld\n", key, SEP, (long long)db->datoff, SEP,
+          (long)db->datlen);
+  len = strlen(db->idxbuf);
+  if (len < IDXLEN_MIN || len > IDXLEN_MAX) {
+    err_dump("_db_writeidx(): invalid length");
+  }
+  /* First half of the of the index record */
+  sprintf(asciiptrlen, "%*lld%*d", PTR_SZ, (long long)ptrval, IDXLEN_SZ, len);
+
+  /*
+   * If we're appending, we have to lock before doing the lseek() and write() to
+   * make the two an atomic operation.  If we're overwriting an existing record,
+   * we don't have to lock.
+   */
+  if (whence == SEEK_END) { /* appending */
+    if (writew_lock(db->idxfd, ((db->nhash + 1) * PTR_SZ) + 1, SEEK_SET, 0) <
+        0) {
+      err_dump("_db_writeidx(): writew_lock() error");
+    }
+  }
+
+  /*
+   * Position the index file and record the offset.
+   */
+  if ((db->idxoff = lseek(db->idxfd, offset, whence)) == -1) {
+    err_dump("_db_writeidx(): lseek() error");
+  }
+
+  iov[0].iov_base = asciiptrlen;
+  iov[0].iov_len = PTR_SZ + IDXLEN_SZ;
+  iov[1].iov_base = db->idxbuf;
+  iov[1].iov_len = len;
+  if (writev(db->idxfd, &iov[0], 2) != PTR_SZ + IDXLEN_SZ + len) {
+    err_dump("_db_writeidx(): writev() error of index record");
+  }
+
+  /* If appending, release lock */
+  if (whence == SEEK_END) {
+    if (un_lock(db->idxfd, ((db->nhash + 1) * PTR_SZ) + 1, SEEK_SET, 0) < 0) {
+      err_dump("_db_writeidx(): un_lock() error");
+    }
+  }
+} /* _db_writeidx() */
+
+/**
+ * Write a chain ptr field somewhere in the index file: the free list, the hash
+ * table, or in an index record.
+ * @param db pointer to database strucutre.
+ * @param offset of where to write the chain ptr field in the index file.
+ * @param ptrval contents of chain ptr in index record.
+ */
+static void _db_writeptr(DB *db, off_t offset, off_t ptrval) {
+  char asciiptr[PTR_SZ + 1];
+
+  /* Validate chain pointer is within bounds */
+  if (ptrval < 0 || ptrval > PTR_MAX) {
+    err_quit("_db_writeptr(): invalid ptr: %d", ptrval);
+  }
+  /* Convert chain pointer to ASCII string */
+  sprintf(asciiptr, "%*lld", PTR_SZ, (long long)ptrval);
+
+  /* Seek to the specified offset in the index file */
+  if (lseek(db->idxfd, offset, SEEK_SET) == -1) {
+    err_dump("_db_writeptr(): lseek() error to ptr field");
+  }
+  /* Write the pointer in the index file */
+  if (write(db->idxfd, asciiptr, PTR_SZ) != PTR_SZ) {
+    err_dump("_db_writeptr(): write() error of ptr field");
+  }
+} /* _db_writeptr() */
+
+/**
+ * Store a record in the database.  Return 0 if OK, 1 if record exists and
+ * DB_INSERT specified, -1 on error.
+ * @param h database handle.
+ * @param key pointer to null-terminated string for key.
+ * @param data pointer to null-terminated string for data.
+ * @param flag used to control behaviour:
+ *   DB_INSERT to insert a new record only.
+ *   DB_STORE to replace or insert.
+ *   DB_REPLACE to replace an existing record.
+ * @return 0 on success; 1 if record exists & DB_INSERT specified; -1 on error.
+ * If length of data record is not valid, this function drops core and the
+ * process is terminated.
+ */
+int db_store(DBHANDLE h, const char *key, const char *data, int flag) {
+  DB *db = h;
+  int rc, keylen, datlen;
+  off_t ptrval;
+
+  /* Validate flag */
+  if (flag != DB_INSERT && flag != DB_REPLACE && flag != DB_STORE) {
+    errno = EINVAL;
+    return (-1);
+  }
+  keylen = strlen(key);
+  datlen = strlen(data) + 1; /* +1 for newline at end */
+  /* Validate length of data record */
+  if (datlen < DATLEN_MIN || datlen > DATLEN_MAX) {
+    err_dump("db_store(): invalid data length");
+  }
+
+  /*
+   * _db_find_and_lock() calculates which hash table this new record goes into
+   * (db->chainoff), regardless of whether it already exists or not.  The
+   * following calls to _db_writeptr() change the hash table entry for this
+   * chain to point to the new record.  The new record is added to the front of
+   * the hash chain.
+   */
+  if (_db_find_and_lock(db, key, 1) < 0) { /* write lock; record not found */
+    if (flag == DB_REPLACE) {
+      rc = -1;
+      db->cnt_storerr++;
+      errno = ENOENT; /* error, record does not exist */
+      goto doreturn;
+    }
+
+    /*
+     * _db_find_and_lock() locked the hash chain; read the chain ptr to the
+     * first index record on hash chain.
+     */
+    prtval = _db_readptr(db, db->chainoff);
+
+    /*
+     * Search the free list for a deleted record witht he same size key and same
+     * size data.  Four cases are possible.
+     */
+    if (_db_findfree(db, keylen, datlen) < 0) {
+      /*
+       * Case 1: Can't find an empty record big enough.  Append the new record
+       * to the ends of the index and data files.
+       */
+      _db_writedat(db, data, 0, SEEK_END);
+      _db_writeidx(db, key, 0, SEEK_END, ptrval);
+
+      /*
+       * db->idxoff was set by _db_writeidx().  The new record goes to the front
+       * of the hash chain.
+       */
+      _db_writeptr(db, db->chainoff, db->idxoff);
+      db->cnt_stor1++;
+    } else {
+      /*
+       * Case 2: Reuse an empty record.  _db_freefind() removed it from the free
+       * list and set both db->datoff and db->idxoff.  Reused record goes to the
+       * front of the hash chain.
+       */
+      _db_writedat(db, data, db->datoff, SEEK_SET);
+      _db_writeidx(db, key, db->idxoff, SEEK_SET, ptrval);
+      _db_writeptr(db, db->chainoff, db->idxoff);
+      db->cnt_stor2++;
+    }
+  } else { /* record found */
+    if (flag == DB_INSERT) {
+      rc = 1; /* error, record already in db */
+      db->cnt_storerr++;
+      goto doreturn;
+    }
+
+    /*
+     * Replacing an existing record.  The new key equals the existing
+     * key, but need to check if the data records are the same size.
+     */
+    if (datlen != db->datlen) {
+      /*
+       * Case 3: Existing record is being replaced, and the length of the new
+       * data record differs from the length of the existing data record.
+       */
+      _db_dodelete(db); /* delete the existing record; deleted record placed
+                       at the head of the free list */
+
+      /*
+       * Reread the chain ptr in the hash table (it may change with the
+       * deletion).
+       */
+      ptrval = _db_readptr(db, db->chainoff);
+
+      /*
+       * Append new index and data records to end of files.
+       */
+      _db_writedat(db, data, 0, SEEK_END);
+      _db_writeidx(db, key, 0, SEEK_END, ptrval);
+
+      /*
+       * New record goes to the front of the hash chain.
+       */
+      _db_writeptr(db, db->chainoff, db->idxoff);
+      db->cnt_stor3++;
+    } else {
+      /*
+       * Case 4: Same size data, just replace data record.
+       */
+      _db_writedat(db, data, db->datoff, SEEK_SET);
+      db->cnt_stor4++;
+    }
+  }
+  rc = 0; /* OK */
+
+  /* Unlock hash chain locked by _db_find_and_lock() */
+doreturn:
+  if (un_lock(db->idxfd, db->chainoff, SEEK_SET, 1) < 0) {
+    err_dump("db_store(): un_lock() error");
+  }
+  return (rc);
+} /* db_store() */
