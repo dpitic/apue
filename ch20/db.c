@@ -894,3 +894,95 @@ doreturn:
   }
   return (rc);
 } /* db_store() */
+
+/**
+ * Try to find a free index record and accompanying data record of the correct
+ * sizes.  This function is only called by db_store().
+ * @param db pointer to database structure.
+ * @param keylen size of key.
+ * @param datlen size of data record.
+ * @return 0 on success; -1 if no match is found; dump core if write locking
+ * fails.
+ */
+static int _db_findfree(DB *db, int keylen, int datlen) {
+  int rc;
+  off_t offset, nextoffset, saveoffset;
+
+  /*
+   * Lock the free list to avoid interfering with any other processes using the
+   * free list.
+   */
+  if (writew_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0) {
+    err_dump("_db_findfree(): writew_lock() error");
+  }
+
+  /*
+   * Read the free list pointer at the head of the list.
+   */
+  saveoffset = FREE_OFF;
+  offset = _db_readptr(db, saveoffset);
+
+  /*
+   * Iterate the free list to find a record with matching key and data sizes.
+   * This simple db library implementation only reuses deleted records if the
+   * key length and data length equal the lengths of the new record being
+   * inserted.
+   */
+  while (offset != 0) {
+    nextoffset = _db_readidx(db, offset);
+    if (strlen(db->idxbuf) == keylen && db->datlen == datlen) {
+      break; /* found a match for key size & data size */
+    }
+    saveoffset = offset;
+    offset = nextoffset;
+  }
+
+  if (offset == 0) {
+    rc = -1; /* no match found */
+  } else {
+    /*
+     * Found a free record with matching key an data sizes.  The index record
+     * was read in by _db_readidx() above, which sets db->ptrval.  Also,
+     * saveoffset points to the chain ptr that pointed to this empty record on
+     * the free list.  Set this chain ptr to db->ptrval, which removes the empty
+     * record from the free list.  By writing the previous record's chain ptr
+     * to point to the next chain pointer value of the record that was found,
+     * it removes the record from the free list.
+     */
+    _db_writeptr(db, saveoffset, db->ptrval);
+    rc = 0;
+
+    /*
+     * Note: _db_readidx() set both db->idxoff and db->datoff.  This is used by
+     * the caller, db_store(), to write the new index record and data record.
+     */
+  }
+
+  /*
+   * Unlock the free list.
+   */
+  if (un_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0) {
+    err_dump("_db_findfree(): un_lock() error");
+  }
+  return (rc);
+} /* _db_findfree() */
+
+/**
+ * Rewind the index file for db_nextkey().  Automatically called by db_open().
+ * Must be called before first db_nextkey().
+ * @param h database handle.
+ */
+void db_rewind(DBHANDLE h) {
+  DB *db = h;
+  off_t offset;
+
+  offset = (db->nhash + 1) * PTR_SZ; /* +1 for free list ptr */
+
+  /*
+   * Just set the file offset for this process to the start of the index
+   * records; no need to lock.  +1 below for newline at end of hash table.
+   */
+  if ((db->idxoff = lseek(db->idxfd, offset + 1, SEEK_SET)) == -1) {
+    err_dump("db_rewind(): lseek() error");
+  }
+} /* db_rewind() */
