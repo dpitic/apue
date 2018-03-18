@@ -1,7 +1,4 @@
 -I/usr/include
--I/usr/lib64/clang/5.0.1/include
--I/usr/lib/clang/5.0.1/include
--I/usr/lib/clang/4.0.1/include
 -Iinclude
--DLNUX
--D_GNU_SOURCE
+-DMACOS
+-D_DARWIN_C_SOURCE
