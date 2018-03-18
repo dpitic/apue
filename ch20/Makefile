@@ -21,10 +21,10 @@ ifeq "$(PLATFORM)" "linux"
   EXTRALD=-Wl,-rpath=.
 endif
 ifeq "$(PLATFORM)" "freebsd"
-  EXTRALD=-R.
+	EXTRALD=-Wl,-rpath=.
 endif
 ifeq "$(PLATFORM)" "openbsd"
-  EXTRALD=-R.
+  EXTRALD=-Wl,-rpath=.
 endif
 ifeq "$(PLATFORM)" "macos"
   EXTRALD=-R.
