@@ -30,7 +30,7 @@ ifeq "$(PLATFORM)" "macos"
   EXTRALD=-R.
 endif
 
-all: libapue_db.so.1 t4 $(LIBMISC)
+all: libapue_db.so.1 t4 t4dump $(LIBMISC)
 
 libapue_db.a:	$(COMM_OBJ) $(LIBAPUE)
 		$(AR) rsv $(LIBMISC) $(COMM_OBJ)
@@ -45,8 +45,12 @@ t4:	$(LIBAPUE)
 		$(CC) $(CFLAGS) -c -I. t4.c
 		$(CC) $(EXTRALD) -o t4 t4.o -L$(ROOT)/lib -L. -lapue_db -lapue
 
+t4dump:	$(LIBAPUE)
+		$(CC) $(CFLAGS) -c -I. t4dump.c
+		$(CC) $(EXTRALD) -o t4dump t4dump.o -L$(ROOT)/lib -L. -lapue_db -lapue
+
 clean:
-	rm -f *.o a.out core temp.* $(LIBMISC) t4 libapue_db.so.* *.dat *.idx \
+	rm -f *.o a.out core temp.* $(LIBMISC) t4 t4dump libapue_db.so.* *.dat *.idx \
 	libapue_db.so
 
 include $(ROOT)/Make.libapue.inc

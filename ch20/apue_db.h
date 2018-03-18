@@ -23,7 +23,7 @@ char *db_fetch(DBHANDLE, const char *);
 int db_delete(DBHANDLE, const char *);
 
 void db_rewind(DBHANDLE);
-char *db_nextkey(DBHANDLE, char *);
+char *db_nextrec(DBHANDLE, char *);
 
 /*
  * Flags for db_store()

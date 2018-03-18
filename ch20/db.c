@@ -65,7 +65,7 @@ typedef struct {
   COUNT cnt_nextrec;  /* nextrec */
   COUNT cnt_stor1;    /* store: DB_INSERT, no empty, appended */
   COUNT cnt_stor2;    /* store: DB_INSERT, found empty, reused */
-  COUNT cnt_stor3;    /* store: DB_REPLACE, diff len, appended */
+  COUNT cnt_stor3;    /* store: DB_REPLACE, different len, appended */
   COUNT cnt_stor4;    /* store: DB_REPLACE, same len, overwrote */
   COUNT cnt_storerr;  /* store error */
 } DB;
@@ -103,8 +103,8 @@ DBHANDLE db_open(const char *pathname, int oflag, ...) {
   DB *db;
   int mode;
   size_t len, i;
-  char asciiptr[PTR_SZ + 1],
-      hash[(NHASH_DEF + 1) * PTR_SZ + 2]; /* +2 for newline & null */
+  char asciiptr[PTR_SZ + 1];
+  char hash[(NHASH_DEF + 1) * PTR_SZ + 2]; /* +2 for newline & null */
   struct stat statbuff;
 
   /*
@@ -418,7 +418,7 @@ static off_t _db_readidx(DB *db, off_t offset) {
   struct iovec iov[2];
 
   /*
-   * Position index file and record the offset.  db_nextkey() calls this
+   * Position index file and record the offset.  db_nextrec() calls this
    * function with offet == 0, meaning read from current offset.  Still need to
    * call lseek() to record the current offset.  Since an index record will
    * never be stored at offset 0 in the index file, the offset value 0 can be
@@ -439,7 +439,7 @@ static off_t _db_readidx(DB *db, off_t offset) {
   iov[1].iov_len = IDXLEN_SZ;
   if ((i = readv(db->idxfd, &iov[0], 2)) != PTR_SZ + IDXLEN_SZ) {
     if (i == 0 && offset == 0) {
-      return (-1); /* EOF for db_nextkey() */
+      return (-1); /* EOF for db_nextrec() */
     }
     err_dump("_db_readidx(): readv() error of index record");
   }
@@ -770,7 +770,9 @@ static void _db_writeptr(DB *db, off_t offset, off_t ptrval) {
  *   DB_INSERT to insert a new record only.
  *   DB_STORE to replace or insert.
  *   DB_REPLACE to replace an existing record.
- * @return 0 on success; 1 if record exists & DB_INSERT specified; -1 on error.
+ * @return 0 on success; 1 if record exists & DB_INSERT specified; -1 on error
+ *   1. If flag is not valid, errno is set to EINVAL.
+ *   2. If record does not exist, errno is set to ENOENT.
  * If length of data record is not valid, this function drops core and the
  * process is terminated.
  */
@@ -810,7 +812,7 @@ int db_store(DBHANDLE h, const char *key, const char *data, int flag) {
      * _db_find_and_lock() locked the hash chain; read the chain ptr to the
      * first index record on hash chain.
      */
-    prtval = _db_readptr(db, db->chainoff);
+    ptrval = _db_readptr(db, db->chainoff);
 
     /*
      * Search the free list for a deleted record witht he same size key and same
@@ -968,8 +970,8 @@ static int _db_findfree(DB *db, int keylen, int datlen) {
 } /* _db_findfree() */
 
 /**
- * Rewind the index file for db_nextkey().  Automatically called by db_open().
- * Must be called before first db_nextkey().
+ * Rewind the index file for db_nextrec().  Automatically called by db_open().
+ * Must be called before first db_nextrec().
  * @param h database handle.
  */
 void db_rewind(DBHANDLE h) {
@@ -986,3 +988,73 @@ void db_rewind(DBHANDLE h) {
     err_dump("db_rewind(): lseek() error");
   }
 } /* db_rewind() */
+
+/**
+ * Return the next sequential record.  This function steps through the index
+ * file, ignoring deleted records.  db_rewind() must be called before this
+ * function is called the first time.
+ * @param h database handle.
+ * @param key if caller provides a non-null pointer, the corresponding key is
+ * copied to the address pointed to by the pointer.  The caller is responsible
+ * for allocating a buffer large enough to store the key.  A buffer whose size
+ * is IDXLEN_MAX bytes is large enough to hold any key.
+ * @return pointer to data buffer for data record.  Records are returned
+ * sequentially in the order they happen to be stored in the database file.
+ * The records are not sorted by key value.  Also, because hash chains are not
+ * followed, deleted records can be found, however deleted records will not be
+ * returned to the caller.  This function can dump core and terminate the
+ * calling process if the index file lock request fails.
+ */
+char *db_nextrec(DBHANDLE h, char *key) {
+  DB *db = h;
+  char c;
+  char *ptr;
+
+  /*
+   * Read lock the free list so that a record is not read in the middle of it
+   * being deleted by another process.
+   */
+  if (readw_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0) {
+    err_dump("db_nextrec(): readw_lock() error");
+  }
+
+  do {
+    /*
+     * Read next sequential index record; starting from the current offset.
+     */
+    if (_db_readidx(db, 0) < 0) {
+      ptr = NULL; /* end of index file, EOF */
+      goto doreturn;
+    }
+
+    /*
+     * Check if key is all blank (empty record).  While reading the index file
+     * sequentially, it is possible to find records that have been deleted.
+     * In order to return only valid records, any record whose key is all
+     * spaces is skipped (_db_dodelete() clears a key by setting it to all
+     * blanks).
+     */
+    ptr = db->idxbuf;
+    while ((c = *ptr++) != 0 && c == SPACE) {
+      ; /* skip until null byte or nonblank */
+    }
+  } while (c == 0); /* loop until a nonblank key is found */
+
+  /* Check if caller provided a non-null key buffer */
+  if (key != NULL) {
+    strcpy(key, db->idxbuf); /* return key copied to caller's buffer */
+  }
+  /*
+   * Read data record and set return value to point to the internal buffer
+   * containing the data record.
+   */
+  ptr = _db_readdat(db); /* return pointer to data buffer */
+  db->cnt_nextrec++;
+
+doreturn:
+  /* Unlock the free list */
+  if (un_lock(db->idxfd, FREE_OFF, SEEK_SET, 1) < 0) {
+    err_dump("db_nextrec(): un_lock() error");
+  }
+  return (ptr);
+} /* db_nextrec() */
