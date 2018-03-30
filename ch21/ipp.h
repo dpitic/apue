@@ -1,6 +1,7 @@
 #ifndef _IPP_H
 #define _IPP_H
 
+#include <stdint.h>
 /*
  * Defines parts of the IPP protocol between the scheduler
  * and the printer.  Based on RFC2911 and RFC2910.

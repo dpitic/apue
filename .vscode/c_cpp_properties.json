@@ -30,6 +30,7 @@
             "name": "Linux",
             "includePath": [
                 "/usr/include",
+                "/usr/lib64/clang/6.0.0/include",
                 "/usr/lib/clang/5.0.1/include",
                 "/usr/lib/clang/4.0.1/include",
                 "/usr/include/x86_64-linux-gnu",
@@ -42,6 +43,7 @@
             "browse": {
                 "path": [
                     "/usr/include",
+                    "/usr/lib64/clang/6.0.0/include",
                     "/usr/lib/clang/5.0.1/include",
                     "/usr/lib/clang/4.0.1/include",
                     "/usr/include/x86_64-linux-gnu",
@@ -50,7 +52,10 @@
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
             },
-            "intelliSenseMode": "clang-x64"
+            "intelliSenseMode": "clang-x64",
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
         },
         {
             "name": "Win32",
