@@ -23,7 +23,8 @@
 					"/usr/lib/clang/5.0.1/include",
                 	"/usr/lib/clang/4.0.1/include",
 					"${project_path}/include",
-					"${project_path}/ch20"			// database library header
+					"${project_path}/ch20",			// database library header
+					"${project_path}/ch21"			// print library header
 				]
 			},
 			"gcc": {
