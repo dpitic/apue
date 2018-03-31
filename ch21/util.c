@@ -71,7 +71,8 @@ static char *scan_configfile(char *keyword) {
    */
   sprintf(pattern, "%%%ds %%%ds", MAXKWLEN - 1, MAXCFGLINE - 1);
   match = 0;
-  /* Read the file one line at a time, scanning for two strings separated by
+  /*
+   * Read the file one line at a time, scanning for two strings separated by
    * white space.
    */
   while (fgets(line, MAXCFGLINE, fp) != NULL) {
@@ -88,4 +89,95 @@ static char *scan_configfile(char *keyword) {
   } else {
     return (NULL);
   }
+}
+
+/**
+ * Return the host name running the print server, or NULL on error.  This is
+ * simply a wrapper function that calls scan_configfile() to find the name of
+ * the computer system where the sprinter spooling daemon is running.
+ * @return host name running the print server on success, or NULL on error.
+ */
+char *get_printserver(void) { return (scan_configfile("printserver")); }
+
+/**
+ * Return the address of the network printer, or NULL on error.
+ * @return address of the network printer on success, or NULL on error.
+ */
+struct addrinfo *get_printaddr(void) {
+  int err;
+  char *p;
+  struct addrinfo *ailist;
+
+  if ((p = scan_configfile("printer")) != NULL) {
+    if ((err = getaddrlist(p, "ipp", &ailist)) != 0) {
+      log_msg("No address information for %s", p);
+      return (NULL);
+    }
+    return (ailist);
+  }
+  log_msg("No printer address specified");
+  return (NULL);
+}
+
+/**
+ * "Timed" read - timeout specifies the number of seconds to wait before giving
+ * up.  This function is suitable for preventing DOS attacks on the printer
+ * spooling daemon.  Returns the number of bytes read, or -1 on error.
+ * @param fd file descriptor to read from.
+ * @param buf pointer to buffer used to read data into.
+ * @param nbytes size of buf.
+ * @param timeout number of seconds to wait before aborting read attempt.
+ * @return number of bytes read on success, which can be less than requested if
+ * all the data doesn't arrive in time; -1 on error, with errno set to
+ * ETIME if data is not received before the specified timeout.
+ */
+ssize_t tread(int fd, void *buf, size_t nbytes, unsigned int timeout) {
+  int nfds;
+  fd_set readfds;
+  struct timeval tv;
+
+  tv.tv_sec = timeout;
+  tv.tv_usec = 0;
+  FD_ZERO(&readfds);
+  FD_SET(fd, &readfds);
+  /* Wait for the specified file descriptor to be readable */
+  nfds = select(fd + 1, &readfds, NULL, NULL, &tv);
+  if (nfds <= 0) {
+    if (nfds == 0) {
+      errno = ETIME;
+    }
+    return (-1);
+  }
+  return (read(fd, buf, nbytes));
+}
+
+/**
+ * "Timed" read - timeout specifies the number of seconds to wait per read()
+ * call before giving up, but read exactly nbytes.  Returns number of bytes
+ * read or -1 on error.
+ * @param fd file descriptor to read from.
+ * @param buf pointer to buffer used to read data into.
+ * @param nbytes number of bytes to read.
+ * @param timeout number of seconds to wait before aborting the read attempt.
+ * @return number of bytes read on success; -1 on error.
+ */
+ssize_t treadn(int fd, void *buf, size_t nbytes, unsigned int timeout) {
+  size_t nleft;  /* number of bytes left to read */
+  ssize_t nread; /* number of bytes read */
+
+  nleft = nbytes;
+  while (nleft > 0) {
+    if ((nread = tread(fd, buf, nleft, timeout)) < 0) {
+      if (nleft == nbytes) {
+        return (-1); /* error; return -1 */
+      } else {
+        break; /* error; return amount read so far */
+      }
+    } else if (nread == 0) {
+      break; /* EOF */
+    }
+    nleft -= nread;
+    buf += nread;
+  }
+  return (nbytes - nleft); /* return >= 0 */
 }
