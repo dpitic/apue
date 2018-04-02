@@ -125,7 +125,9 @@ void err_exit(int, const char *, ...) __attribute__((noreturn));
 void log_msg(const char *, ...);
 void log_open(const char *, int, int);
 void log_quit(const char *, ...) __attribute__((noreturn));
+void log_ret(const char *, ...);
 void log_sys(const char *, ...) __attribute__((noreturn));
+void log_exit(int, const char *, ...) __attribute__((noreturn));
 
 void TELL_WAIT(void); /* parent/child from race conditions section */
 void TELL_PARENT(pid_t);

@@ -214,4 +214,51 @@ int main(int argc, char *argv[]) {
 
   init_request(); /* initialise job requests & ensure only 1 daemon running */
   init_printer(); /* initialise printer information */
-}
+
+  /* Create thread to communicate with the printer */
+  err = pthread_create(&tid, NULL, printer_thread, NULL);
+  /* Create thread to handle signals */
+  if (err == 0) {
+    err = pthread_create(&tid, NULL, signal_thread, NULL);
+  }
+  if (err != 0) {
+    log_exit(err, "Can't create thread");
+  }
+  /*
+   * Search the printer spool directory for any pending print jobs.  For each
+   * job found on disk, a strucutre is created to let the printer thread know
+   * that it should send the file to the printer.
+   */
+  build_qonstart();
+
+  /* Finished setting up the print spooling daemon */
+  log_msg("Daemon initialised");
+
+  /* main thread infinite loop */
+  for (;;) {
+    /*
+     * select() modifies fd set passed to it to include only those fds that
+     * satisfy the event, so make a copy of rendezvous set.
+     */
+    rset = rendezvous;
+    /* Wait for one of the file descriptors to become readable */
+    if (select(maxfd + 1, &rset, NULL, NULL, NULL) < 0) {
+      log_sys("select() failed");
+    }
+    /* Check rset for a readable file descriptor */
+    for (i = 0; i <= maxfd; i++) {
+      if (FD_ISSET(i, &rset)) {
+        /*
+         * Accept the connection and handle the request.
+         */
+        if ((sockfd = accept(i, NULL, NULL)) < 0) {
+          log_ret("accept() failed");
+        }
+        /* Create thread to handle client connection */
+        pthread_create(&tid, NULL, client_thread, (void *)((long)sockfd));
+      }
+    }
+  }
+  /* main thread should never reach this exit statement */
+  exit(1);
+} /* main() */
