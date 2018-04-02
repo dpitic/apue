@@ -1,7 +1,6 @@
 /*
  * Print server daemon.
  */
-#include "apue.h"
 #include <ctype.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -10,6 +9,7 @@
 #include <strings.h>
 #include <sys/select.h>
 #include <sys/uio.h>
+#include "apue.h"
 
 #include "ipp.h"
 #include "print.h"
@@ -262,3 +262,32 @@ int main(int argc, char *argv[]) {
   /* main thread should never reach this exit statement */
   exit(1);
 } /* main() */
+
+/**
+ * @brief Initialise the job ID file.
+ *
+ * Use a record lock to prevent more than one printer daemon from running at a
+ * time.
+ */
+void init_request(void) {
+  int n;
+  char name[FILENMSZ];
+
+  sprintf(name, "%s/%s", SPOOLDIR, JOBFILE);
+  jobfd = open(name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+  if (write_lock(jobfd, 0, SEEK_SET, 0) < 0) {
+    log_quit("Daemon already running");
+  }
+
+  /*
+   * Reuse the name buffer for the job counter.
+   */
+  if ((n = read(jobfd, name, FILENMSZ)) < 0) {
+    log_sys("Can't read job file");
+  }
+  if (n == 0) {
+    nextjob = 1;
+  } else {
+    nextjob = atol(name);
+  }
+}
