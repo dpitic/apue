@@ -275,19 +275,109 @@ void init_request(void) {
 
   sprintf(name, "%s/%s", SPOOLDIR, JOBFILE);
   jobfd = open(name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+  /*
+   * Obtain write lock on job file to prevent other instances of the print spool
+   * daemon running.
+   */
   if (write_lock(jobfd, 0, SEEK_SET, 0) < 0) {
     log_quit("Daemon already running");
   }
 
   /*
-   * Reuse the name buffer for the job counter.
+   * Reuse the name buffer for the job counter.  Job file contains an ASCII
+   * integer string representing the next job number.  If the file was newly
+   * created, it will be empty.
    */
   if ((n = read(jobfd, name, FILENMSZ)) < 0) {
     log_sys("Can't read job file");
   }
-  if (n == 0) {
+  if (n == 0) { /* New file is empty; set nextjob number to 1 */
     nextjob = 1;
-  } else {
+  } else { /* Existing file; get job number (from reused buffer) */
     nextjob = atol(name);
   }
+} /* init_request*() */
+
+/**
+ * @brief Initialise printer information from configuration file.
+ *
+ * This function is used to set the printer name and address.
+ */
+void init_printer(void) {
+  printer = get_printaddr();
+  if (printer == NULL) {
+    exit(1); /* message already logged */
+  }
+  printer_name = printer->ai_canonname;
+  if (printer_name == NULL) {
+    /* Printer name not defined; use some default name */
+    printer_name = "printer";
+  }
+  log_msg("printer is %s", printer_name);
+} /* init_printer() */
+
+/**
+ * @brief Update the job ID file with the next job number.
+ * @details This function is used to write the next job number to the job file.
+ * It does not handle wrap-around of job number.
+ */
+void update_jobno(void) {
+  char buf[32];
+
+  if (lseek(jobfd, 0, SEEK_SET) == -1) {
+    log_sys("Can't seek in job file");
+  }
+  sprintf(buf, "%d", nextjob);
+  if (write(jobfd, buf, strlen(buf)) < 0) {
+    log_sys("Can't update job file");
+  } /* update_jobno() */
 }
+
+/**
+ * @brief Get the next job number.
+ *
+ * @return next job number.
+ */
+int32_t get_newjobno(void) {
+  int32_t jobid;
+
+  pthread_mutex_lock(&joblock);
+  jobid = nextjob++;
+  /* Handle case where jobid wraps around; restart at 1 */
+  if (nextjob <= 0) {
+    nextjob = 1;
+  }
+  pthread_mutex_unlock(&joblock);
+  return (jobid);
+} /* get_newjobno() */
+
+/**
+ * @brief Add a new job to the list of pending jobs.
+ *
+ * This function is used to add a new job to the list of pending jobs and then
+ * signal the printer thread that a job is pending.
+ *
+ * @param reqp pointer to printreq structure from client.
+ * @param jobid print job number.
+ */
+void add_job(struct printreq *reqp, int32_t jobid) {
+  struct job *jp;
+
+  if ((jp = malloc(sizeof(struct job))) == NULL) {
+    log_sys("malloc() failed");
+  }
+  /* Copy request struct from the client into the job structure */
+  memcpy(&jp->req, reqp, sizeof(struct printreq));
+  jp->jobid = jobid;
+  jp->next = NULL;
+  pthread_mutex_lock(&joblock);
+  jp->prev = jobtail;    /* set new struct prev ptr to last job on list */
+  if (jobtail == NULL) { /* List is empty */
+    jobhead = jp;        /* job head ptr; this job is at the head of the list */
+  } else {               /* List not empty */
+    jobtail->next = jp;  /* next ptr of last entry points to this job */
+  }
+  jobtail = jp; /* job tail ptr; this job is at the end of the list */
+  pthread_mutex_unlock(&joblock);
+  pthread_cond_signal(&jobwait); /* signal print thread another job avail. */
+} /* add_job() */
