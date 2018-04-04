@@ -1,6 +1,7 @@
 /*
  * Print server daemon.
  */
+#include "apue.h"
 #include <ctype.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -9,7 +10,6 @@
 #include <strings.h>
 #include <sys/select.h>
 #include <sys/uio.h>
-#include "apue.h"
 
 #include "ipp.h"
 #include "print.h"
@@ -381,3 +381,263 @@ void add_job(struct printreq *reqp, int32_t jobid) {
   pthread_mutex_unlock(&joblock);
   pthread_cond_signal(&jobwait); /* signal print thread another job avail. */
 } /* add_job() */
+
+/**
+ * @brief Replace a job back on the head of the list.
+ * @details This function is used to insert a job at the head of the pending
+ * job list.
+ * @param jp pointer to job that is to be inserted on the head of the list.
+ */
+void replace_job(struct job *jp) {
+  pthread_mutex_lock(&joblock);
+  jp->prev = NULL;       /* this job is at the head of the job list */
+  jp->next = jobhead;    /* insert this job at the head of the list */
+  if (jobhead == NULL) { /* empty list */
+    jobtail = jp;        /* this is the only job in the list */
+  } else {               /* job list not empty */
+    jobhead->prev = jp;  /* insert this job at the head of the list */
+  }
+  jobhead = jp; /* insert this job at the head of the job list */
+  pthread_mutex_unlock(&joblock);
+} /* replace_job() */
+
+/**
+ * @brief Remove a job from the list of pending jobs.
+ * @details This function removes a job from the list of pending jobs given a
+ * pointer to the job to be removed.  The caller must hold the job lock mutex.
+ * @param target pointer to job that should be removed from job list.
+ */
+void remove_job(struct job *target) {
+  /* Set this target job's previous pointer */
+  if (target->next != NULL) { /* target is not the last job in the job list */
+    target->next->prev = target->prev;
+  } else { /* target job is the last job in the job list */
+    jobtail = target->prev;
+  }
+  /* Set this target job's next pointer */
+  if (target->prev != NULL) { /* target is not the first job in the job list */
+    target->prev->next = target->next;
+  } else { /* target job is the first job in the job list */
+    jobhead = target->next;
+  }
+} /* remove_job() */
+
+/**
+ * @brief Check the spool directory for pending jobs on start-up.
+ * @details When the print spooler daemon starts, it uses this function to
+ * build an in-memory list of print jobs from the disk files stored in the
+ * print spooler printer request directory.  If the directory can't be opened,
+ * no print jobs are pending, so the function returns.
+ */
+void build_qonstart(void) {
+  int fd, err, nr;
+  int32_t jobid;
+  DIR *dirp;
+  struct dirent *entp;
+  struct printreq req;
+  char dname[FILENMSZ], fname[FILENMSZ];
+
+  sprintf(dname, "%s/%s", SPOOLDIR, REQDIR);
+  if ((dirp = opendir(dname)) == NULL) {
+    /* No print jobs are pending */
+    return;
+  }
+  /* Read each entry in the directory, one at a time; skip . and .. */
+  while ((entp = readdir(dirp)) != NULL) {
+    /*
+     * Skip "." and ".."
+     */
+    if (strcmp(entp->d_name, ".") == 0 || strcmp(entp->d_name, "..") == 0) {
+      continue;
+    }
+    /*
+     * Read the request structure.
+     */
+    /* Build full pathname of the print request file and open for reading */
+    sprintf(fname, "%s/%s/%s", SPOOLDIR, REQDIR, entp->d_name);
+    if ((fd = open(fname, O_RDONLY)) < 0) {
+      /* Opening file failed; just skip the file */
+      continue;
+    }
+    /* Read the print request structure from the file */
+    nr = read(fd, &req, sizeof(struct printreq));
+    /* Check to ensure whole strucutre was read */
+    if (nr != sizeof(struct printreq)) {
+      if (nr < 0) {
+        err = errno;
+      } else {
+        err = EIO;
+      }
+      close(fd);
+      log_msg("build_qonstart(): can't read %s: %s", fname, strerror(err));
+      unlink(fname);
+      /* Build full pathname of corresponding data file */
+      sprintf(fname, "%s/%s/%s", SPOOLDIR, DATADIR, entp->d_name);
+      unlink(fname);
+      continue;
+    }
+    /* Able to read the complete print request strucutre */
+    jobid = atol(entp->d_name); /* get print job ID */
+    log_msg("Adding job %d to queue", jobid);
+    add_job(&req, jobid); /* Add request to list of pending print jobs */
+  }
+  /*
+   * Finished reading the directory; readdir() will return NULL; close directory
+   * and return.
+   */
+  closedir(dirp);
+} /* build_qonstart() */
+
+/**
+ * @brief Accept a print job from a client.
+ * @details Client thread is spawned from the main thread when a connect request
+ * is accepted.  Its job is to receive the file to be printed from the client
+ * print command.  A separate thread is created for each client print request.
+ *
+ * @param arg socket file descriptor.
+ */
+void *client_thread(void *arg) {
+  int n, fd, sockfd, nr, nw, first;
+  int32_t jobid;
+  pthread_t tid;
+  struct printreq req;
+  struct printresp res;
+  char name[FILENMSZ];
+  char buf[IOBUFSZ];
+
+  tid = pthread_self();
+  /* Install thread cleanup handler */
+  pthread_cleanup_push(client_cleanup, (void *)((long)tid));
+  sockfd = (long)arg;
+  /* Create worker thread structure & add it to list of active client threads */
+  add_worker(tid, sockfd);
+
+  /*
+   * Read the request header.
+   */
+  if ((n = treadn(sockfd, &req, sizeof(struct printreq), 10)) !=
+      sizeof(struct printreq)) {
+    res.jobid = 0;
+    if (n < 0) {
+      res.retcode = htonl(errno);
+    } else {
+      res.retcode = htonl(EIO);
+    }
+    strncpy(res.msg, strerror(res.retcode), MSGLEN_MAX);
+    writen(sockfd, &res, sizeof(struct printresp));
+    pthread_exit((void *)1);
+  }
+  req.size = ntohl(req.size);
+  req.flags = ntohl(req.flags);
+
+  /*
+   * Create the data file.
+   */
+  jobid = get_newjobno();
+  sprintf(name, "%s/%s/%d", SPOOLDIR, DATADIR, jobid);
+  fd = creat(name, FILEPERM);
+  if (fd < 0) {
+    res.jobid = 0;
+    res.retcode = htonl(errno);
+    log_msg("client_thread(): can't create %s: %s", name,
+            strerror(res.retcode));
+    strncpy(res.msg, strerror(res.retcode), MSGLEN_MAX);
+    writen(sockfd, &res, sizeof(struct printresp));
+    pthread_exit((void *)1);
+  }
+
+  /*
+   * Read the file and store it in the spool directory.  Try to figure out if
+   * the file is a PostScript file or a plain text file.
+   */
+  first = 1;
+  while ((nr = tread(sockfd, buf, IOBUFSZ, 20)) > 0) {
+    if (first) {
+      first = 0;
+      if (strncmp(buf, "%!PS", 4) != 0) {
+        /* The file doesn't begin with the pattern %!PS; assume text file */
+        req.flags |= PR_TEXT;
+      }
+    }
+    nw = write(fd, buf, nr);
+    if (nw != nr) {
+      res.jobid = 0;
+      if (nw < 0) {
+        res.retcode = htonl(errno);
+      } else {
+        res.retcode = htonl(EIO);
+      }
+      log_msg("client_thread(): can't write %s: %s", name,
+              strerror(res.retcode));
+      close(fd);
+      strncpy(res.msg, strerror(res.retcode), MSGLEN_MAX);
+      writen(sockfd, &res, sizeof(struct printresp));
+      unlink(name);
+      pthread_exit((void *)1);
+    }
+  }
+  close(fd);
+
+  /*
+   * Create the control file.  Then write the print request information to the
+   * control file.
+   */
+  sprintf(name, "%s/%s/%d", SPOOLDIR, REQDIR, jobid);
+  fd = creat(name, FILEPERM);
+  if (fd < 0) {
+    /*
+     * Print request control file creation failed; remove data file & terminate
+     * thread.
+     */
+    res.jobid = 0;
+    res.retcode = htonl(errno);
+    log_msg("client_thread(): can't create %s: %s", name,
+            strerror(res.retcode));
+    strncpy(res.msg, strerror(res.retcode), MSGLEN_MAX);
+    writen(sockfd, &res, sizeof(struct printresp));
+    sprintf(name, "%s/%s/%d", SPOOLDIR, DATADIR, jobid);
+    unlink(name);
+    pthread_exit((void *)1);
+  }
+
+  /* Write print request structure to the control file. */
+  nw = write(fd, &req, sizeof(struct printreq));
+  if (nw != sizeof(struct printreq)) {
+    res.jobid = 0;
+    if (nw < 0) {
+      res.retcode = htonl(errno);
+    } else {
+      res.retcode = htonl(EIO);
+    }
+    log_msg("client_thread(): can't write %s: %s", name, strerror(res.retcode));
+    close(fd);
+    strncpy(res.msg, strerror(res.retcode), MSGLEN_MAX);
+    writen(sockfd, &res, sizeof(struct printresp));
+    unlink(name);
+    sprintf(name, "%s/%s/%d", SPOOLDIR, DATADIR, jobid);
+    unlink(name);
+    pthread_exit((void *)1);
+  }
+  /*
+   * Close file descriptor for control file.  File descriptors are not
+   * automatically closed when a thread ends if other threads exist in the
+   * process.
+   */
+  close(fd);
+
+  /*
+   * Send response back to client.
+   */
+  res.retcode = 0; /* successful status */
+  res.jobid = htonl(jobid);
+  sprintf(res.msg, "Request ID %d", jobid);
+  writen(sockfd, &res, sizeof(struct printresp));
+
+  /*
+   * Notify the printer thread, clean up, and exit.
+   */
+  log_msg("Adding job %d to queue", jobid);
+  add_job(&req, jobid); /* add job to list of pending print jobs */
+  pthread_cleanup_pop(1);
+  return ((void *)0);
+} /* client_thread() */
