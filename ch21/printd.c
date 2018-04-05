@@ -1,7 +1,6 @@
 /*
  * Print server daemon.
  */
-#include "apue.h"
 #include <ctype.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -10,6 +9,7 @@
 #include <strings.h>
 #include <sys/select.h>
 #include <sys/uio.h>
+#include "apue.h"
 
 #include "ipp.h"
 #include "print.h"
@@ -264,10 +264,10 @@ int main(int argc, char *argv[]) {
 } /* main() */
 
 /**
- * @brief Initialise the job ID file.
+ * @brief      Initialise the job ID file.
  *
- * Use a record lock to prevent more than one printer daemon from running at a
- * time.
+ *             Use a record lock to prevent more than one printer daemon from
+ *             running at a time.
  */
 void init_request(void) {
   int n;
@@ -299,9 +299,9 @@ void init_request(void) {
 } /* init_request*() */
 
 /**
- * @brief Initialise printer information from configuration file.
+ * @brief      Initialise printer information from configuration file.
  *
- * This function is used to set the printer name and address.
+ *             This function is used to set the printer name and address.
  */
 void init_printer(void) {
   printer = get_printaddr();
@@ -317,9 +317,9 @@ void init_printer(void) {
 } /* init_printer() */
 
 /**
- * @brief Update the job ID file with the next job number.
- * @details This function is used to write the next job number to the job file.
- * It does not handle wrap-around of job number.
+ * @brief      Update the job ID file with the next job number.
+ * @details    This function is used to write the next job number to the job
+ *             file. It does not handle wrap-around of job number.
  */
 void update_jobno(void) {
   char buf[32];
@@ -352,13 +352,13 @@ int32_t get_newjobno(void) {
 } /* get_newjobno() */
 
 /**
- * @brief Add a new job to the list of pending jobs.
+ * @brief      Add a new job to the list of pending jobs.
  *
- * This function is used to add a new job to the list of pending jobs and then
- * signal the printer thread that a job is pending.
+ *             This function is used to add a new job to the list of pending
+ *             jobs and then signal the printer thread that a job is pending.
  *
- * @param reqp pointer to printreq structure from client.
- * @param jobid print job number.
+ * @param      reqp   pointer to printreq structure from client.
+ * @param      jobid  print job number.
  */
 void add_job(struct printreq *reqp, int32_t jobid) {
   struct job *jp;
@@ -383,10 +383,12 @@ void add_job(struct printreq *reqp, int32_t jobid) {
 } /* add_job() */
 
 /**
- * @brief Replace a job back on the head of the list.
- * @details This function is used to insert a job at the head of the pending
- * job list.
- * @param jp pointer to job that is to be inserted on the head of the list.
+ * @brief      Replace a job back on the head of the list.
+ * @details    This function is used to insert a job at the head of the pending
+ *             job list.
+ *
+ * @param      jp    pointer to job that is to be inserted on the head of the
+ *                   list.
  */
 void replace_job(struct job *jp) {
   pthread_mutex_lock(&joblock);
@@ -402,10 +404,12 @@ void replace_job(struct job *jp) {
 } /* replace_job() */
 
 /**
- * @brief Remove a job from the list of pending jobs.
- * @details This function removes a job from the list of pending jobs given a
- * pointer to the job to be removed.  The caller must hold the job lock mutex.
- * @param target pointer to job that should be removed from job list.
+ * @brief      Remove a job from the list of pending jobs.
+ * @details    This function removes a job from the list of pending jobs given a
+ *             pointer to the job to be removed.  The caller must hold the job
+ *             lock mutex.
+ *
+ * @param      target  pointer to job that should be removed from job list.
  */
 void remove_job(struct job *target) {
   /* Set this target job's previous pointer */
@@ -423,11 +427,12 @@ void remove_job(struct job *target) {
 } /* remove_job() */
 
 /**
- * @brief Check the spool directory for pending jobs on start-up.
- * @details When the print spooler daemon starts, it uses this function to
- * build an in-memory list of print jobs from the disk files stored in the
- * print spooler printer request directory.  If the directory can't be opened,
- * no print jobs are pending, so the function returns.
+ * @brief      Check the spool directory for pending jobs on start-up.
+ * @details    When the print spooler daemon starts, it uses this function to
+ *             build an in-memory list of print jobs from the disk files stored
+ *             in the print spooler printer request directory.  If the directory
+ *             can't be opened, no print jobs are pending, so the function
+ *             returns.
  */
 void build_qonstart(void) {
   int fd, err, nr;
@@ -489,12 +494,13 @@ void build_qonstart(void) {
 } /* build_qonstart() */
 
 /**
- * @brief Accept a print job from a client.
- * @details Client thread is spawned from the main thread when a connect request
- * is accepted.  Its job is to receive the file to be printed from the client
- * print command.  A separate thread is created for each client print request.
+ * @brief      Accept a print job from a client.
+ * @details    Client thread is spawned from the main thread when a connect
+ *             request is accepted.  Its job is to receive the file to be
+ *             printed from the client print command.  A separate thread is
+ *             created for each client print request.
  *
- * @param arg socket file descriptor.
+ * @param      arg   socket file descriptor.
  */
 void *client_thread(void *arg) {
   int n, fd, sockfd, nr, nw, first;
@@ -641,3 +647,87 @@ void *client_thread(void *arg) {
   pthread_cleanup_pop(1);
   return ((void *)0);
 } /* client_thread() */
+
+/**
+ * @brief      Add a worker to the list of worker threads.
+ * @details    This function adds a worker thread to the list of active threads.
+ *
+ * @param      tid     thread ID to add to list of active threads.
+ * @param      sockfd  socket file descriptor.
+ */
+void add_worker(pthread_t tid, int sockfd) {
+  struct worker_thread *wtp;
+
+  if ((wtp = malloc(sizeof(struct worker_thread))) == NULL) {
+    log_ret("add_worker(): can't malloc()");
+    pthread_exit((void *)1);
+  }
+  wtp->tid = tid;
+  wtp->sockfd = sockfd;
+  pthread_mutex_lock(&workerlock);
+  /* Add worker thread to head of list */
+  wtp->prev = NULL;
+  wtp->next = workers;
+  if (workers == NULL) { /* List is empty */
+    workers = wtp;
+  } else { /* List is not empty; add to head of list */
+    workers->prev = wtp;
+  }
+  pthread_mutex_unlock(&workerlock);
+} /* add_worker() */
+
+/**
+ * @brief      Cancel (kill) all outstanding workers.
+ * @details    This function walks the list of worker threads and cancels each
+ *             one.  The function holds the worker lock mutex while walking the
+ *             list.
+ */
+void kill_workers(void) {
+  struct worker_thread *wtp;
+
+  pthread_mutex_lock(&workerlock);
+  for (wtp = workers; wtp != NULL; wtp = wtp->next) {
+    pthread_cancel(wtp->tid);
+  }
+  pthread_mutex_unlock(&workerlock);
+} /* kill_workers() */
+
+/**
+ * @brief      Cancellation routine for the worker thread.
+ * @details    This is the thread cleanup handler for worker threads that
+ *             communicate with the client commands.  It is called the thread
+ *             calls pthread_exit(), pthread_cleanup_pop() with a nonzero
+ *             argument, or responds to a cancellation request.  The function
+ *             locks the worker lock mutex and searches the list of worker
+ *             threads until it finds a matching thread ID. When a match is
+ *             found, the worker thread strucutre is removed from the list, and
+ *             the search is terminated.
+ *
+ * @param      arg   Thread ID of the thread terminating.
+ */
+void client_cleanup(void *arg) {
+  struct worker_thread *wtp;
+  pthread_t tid;
+
+  tid = (pthread_t)((long)arg);
+  pthread_mutex_lock(&workerlock);
+  for (wtp = workers; wtp != NULL; wtp = wtp->next) {
+    if (wtp->tid == tid) {
+      if (wtp->next != NULL) {
+        wtp->next->prev = wtp->prev;
+      }
+      if (wtp->prev != NULL) {
+        wtp->prev->next = wtp->next;
+      } else {
+        workers = wtp->next;
+      }
+      break;
+    }
+  }
+  pthread_mutex_unlock(&workerlock);
+  if (wtp != NULL) {
+    /* Close socket file descriptor used by thread to communicate with client */
+    close(wtp->sockfd);
+    free(wtp);
+  }
+} /* client_cleanup() */
