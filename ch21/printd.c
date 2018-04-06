@@ -731,3 +731,79 @@ void client_cleanup(void *arg) {
     free(wtp);
   }
 } /* client_cleanup() */
+
+/**
+ * @brief      Deal with signals.
+ * @details    This function is run by the thread that is responsible for
+ *             handling signals. In the main() function, the signal mask is
+ *             initialised to include SIGHUP and SIGTERM. This function calls
+ *             sigwait() to wait for one of those signals to occur.
+ *
+ * @param      arg   Not used; requried for function definition.
+ */
+void *signal_thread(void *arg) {
+  int err, signo;
+
+  for (;;) {
+    err = sigwait(&mask, &signo);
+    if (err != 0) {
+      log_quit("sigwait() failed: %s", strerror(err));
+    }
+    switch (signo) {
+      case SIGHUP:
+        /*
+         * Schedule to re-read the configuration file.
+         */
+        pthread_mutex_lock(&configlock);
+        reread = 1;
+        pthread_mutex_unlock(&configlock);
+        break;
+      case SIGTERM:
+        kill_workers();
+        log_msg("Terminate with signal %s", strsignal(signo));
+        exit(0);
+      default:
+        kill_workers();
+        log_quit("Unexpected signal %d", signo);
+    }
+  }
+} /* signal_thread() */
+
+/**
+ * @brief      Add an option to the IPP header.
+ * @details    The format of an attribute is:
+ *    * 1-byte tag describing the type of the attribute.
+ *    * length of the attribute name stored in binary as a 2-byte integer.
+ *    * name of the attribute.
+ *    * size of the attribute value.
+ *    * value.
+ *
+ * @param      cp       character pointer to header.
+ * @param[in]  tag      The tag
+ * @param      optname  Header attribute name.
+ * @param      optval   Header attribute value.
+ *
+ * @return     The address in the header where the next part of the header
+ *             should begin.
+ */
+char *add_option(char *cp, int tag, char *optname, char *optval) {
+  int n;
+  union {
+    int16_t s;
+    char c[2];
+  } u;
+
+  *cp++ = tag;
+  n = strlen(optname);
+  u.s = htons(n);
+  *cp++ = u.c[0];
+  *cp++ = u.c[1];
+  strcpy(cp, optname);
+  cp += n;
+  n = strlen(optval);
+  u.s = htons(n);
+  *cp++ = u.c[0];
+  *cp++ = u.c[1];
+  strcpy(cp, optval);
+  return (cp + n);
+} /* add_option() */
