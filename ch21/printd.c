@@ -18,7 +18,7 @@
  * Macros used for the HTTP response from the printer.
  */
 #define HTTP_INFO(x) ((x) >= 100 && (x) <= 199)
-#define HTTP_SUCCESS(X) ((x) >= 200 && (x) <= 299)
+#define HTTP_SUCCESS(x) ((x) >= 200 && (x) <= 299)
 
 /**
  * Structure used to describe a print job.
