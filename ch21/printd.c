@@ -1,6 +1,7 @@
 /*
  * Print server daemon.
  */
+#include "apue.h"
 #include <ctype.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -9,7 +10,6 @@
 #include <strings.h>
 #include <sys/select.h>
 #include <sys/uio.h>
-#include "apue.h"
 
 #include "ipp.h"
 #include "print.h"
@@ -406,7 +406,7 @@ void replace_job(struct job *jp) {
 /**
  * @brief      Remove a job from the list of pending jobs.
  * @details    This function removes a job from the list of pending jobs given a
- *             pointer to the job to be removed.  The caller must hold the job
+ *             pointer to the job to be removed. The caller must hold the job
  *             lock mutex.
  *
  * @param      target  pointer to job that should be removed from job list.
@@ -430,7 +430,7 @@ void remove_job(struct job *target) {
  * @brief      Check the spool directory for pending jobs on start-up.
  * @details    When the print spooler daemon starts, it uses this function to
  *             build an in-memory list of print jobs from the disk files stored
- *             in the print spooler printer request directory.  If the directory
+ *             in the print spooler printer request directory. If the directory
  *             can't be opened, no print jobs are pending, so the function
  *             returns.
  */
@@ -496,8 +496,8 @@ void build_qonstart(void) {
 /**
  * @brief      Accept a print job from a client.
  * @details    Client thread is spawned from the main thread when a connect
- *             request is accepted.  Its job is to receive the file to be
- *             printed from the client print command.  A separate thread is
+ *             request is accepted. Its job is to receive the file to be
+ *             printed from the client print command. A separate thread is
  *             created for each client print request.
  *
  * @param      arg   socket file descriptor.
@@ -679,7 +679,7 @@ void add_worker(pthread_t tid, int sockfd) {
 /**
  * @brief      Cancel (kill) all outstanding workers.
  * @details    This function walks the list of worker threads and cancels each
- *             one.  The function holds the worker lock mutex while walking the
+ *             one. The function holds the worker lock mutex while walking the
  *             list.
  */
 void kill_workers(void) {
@@ -695,9 +695,9 @@ void kill_workers(void) {
 /**
  * @brief      Cancellation routine for the worker thread.
  * @details    This is the thread cleanup handler for worker threads that
- *             communicate with the client commands.  It is called the thread
+ *             communicate with the client commands. It is called the thread
  *             calls pthread_exit(), pthread_cleanup_pop() with a nonzero
- *             argument, or responds to a cancellation request.  The function
+ *             argument, or responds to a cancellation request. The function
  *             locks the worker lock mutex and searches the list of worker
  *             threads until it finds a matching thread ID. When a match is
  *             found, the worker thread strucutre is removed from the list, and
@@ -750,21 +750,21 @@ void *signal_thread(void *arg) {
       log_quit("sigwait() failed: %s", strerror(err));
     }
     switch (signo) {
-      case SIGHUP:
-        /*
-         * Schedule to re-read the configuration file.
-         */
-        pthread_mutex_lock(&configlock);
-        reread = 1;
-        pthread_mutex_unlock(&configlock);
-        break;
-      case SIGTERM:
-        kill_workers();
-        log_msg("Terminate with signal %s", strsignal(signo));
-        exit(0);
-      default:
-        kill_workers();
-        log_quit("Unexpected signal %d", signo);
+    case SIGHUP:
+      /*
+       * Schedule to re-read the configuration file.
+       */
+      pthread_mutex_lock(&configlock);
+      reread = 1;
+      pthread_mutex_unlock(&configlock);
+      break;
+    case SIGTERM:
+      kill_workers();
+      log_msg("Terminate with signal %s", strsignal(signo));
+      exit(0);
+    default:
+      kill_workers();
+      log_quit("Unexpected signal %d", signo);
     }
   }
 } /* signal_thread() */
@@ -807,3 +807,425 @@ char *add_option(char *cp, int tag, char *optname, char *optval) {
   strcpy(cp, optval);
   return (cp + n);
 } /* add_option() */
+
+/**
+ * @brief      Single thread to communicate with the printer.
+ * @details    This function is run by the thread that communicates with the
+ *             network printer
+ *
+ * @param      arg   No used.
+ */
+void *printer_thread(void *arg) {
+  struct job *jp;
+  int hlen, ilen, sockfd, fd, nr, nw, extra;
+  char *icp; /** IPP header character pointer */
+  char *hcp; /* HTTP header character pointer */
+  char *p;
+  struct ipp_hdr *hp;
+  struct stat sbuf;
+  struct iovec iov[2];
+  char name[FILENMSZ];
+  char hbuf[HBUFSZ]; /* HTTP header buffer */
+  char ibuf[IBUFSZ]; /* IPP header buffer */
+  char buf[IOBUFSZ];
+  char str[64];
+  struct timespec ts = {60, 0}; /* 1 minute */
+
+  /*
+   * Printer thread infinite loop that waits for jobs to transmit to the
+   * printer.
+   */
+  for (;;) {
+    /*
+     * Get a job to print.
+     */
+    pthread_mutex_lock(&joblock); /* lock the job list */
+    while (jobhead == NULL) {     /* no pending jobs */
+      log_msg("printer_thread(): waiting...");
+      pthread_cond_wait(&jobwait, &joblock); /* wait for job to arribe */
+    }
+    /* Print job arrived */
+    remove_job(jp = jobhead);
+    log_msg("printer_thread(): picked up job %d", jp->jobid);
+    pthread_mutex_unlock(&joblock);
+    update_jobno();
+
+    /*
+     * Check for a change in the configuration file.
+     */
+    pthread_mutex_lock(&configlock);
+    if (reread) {
+      freeaddrinfo(printer);
+      printer = NULL;
+      printer_name = NULL;
+      reread = 0;
+      pthread_mutex_unlock(&configlock);
+      init_printer();
+    } else {
+      pthread_mutex_unlock(&configlock);
+    }
+
+    /*
+     * Send job to printer.
+     */
+    sprintf(name, "%s/%s/%d", SPOOLDIR, DATADIR, jp->jobid);
+    if ((fd = open(name, O_RDONLY)) < 0) {
+      log_msg("Job %d cancelled - can't open %s: %s", jp->jobid, name,
+              strerror(errno));
+      free(jp);
+      continue;
+    }
+    if (fstat(fd, &sbuf) < 0) {
+      log_msg("Job %d cancelled - can't fstat %s: %s", jp->jobid, name,
+              strerror(errno));
+      free(jp);
+      close(fd);
+      continue;
+    }
+    /* Open a stream socket connected to the printer */
+    if ((sockfd = connect_retry(AF_INET, SOCK_STREAM, 0, printer->ai_addr,
+                                printer->ai_addrlen)) < 0) {
+      log_msg("Job %d deferred - can't contact printer: %s", jp->jobid,
+              strerror(errno));
+      goto defer;
+    }
+
+    /*
+     * Set up the IPP header.
+     */
+    icp = ibuf;
+    hp = (struct ipp_hdr *)icp;
+    hp->major_version = 1;
+    hp->minor_version = 1;
+    /* Convert 2-byte operation ID from host to network byte order */
+    hp->operation = htons(OP_PRINT_JOB);
+    /* Convert 4-byte job ID from host to network byte order */
+    hp->request_id = htonl(jp->jobid);
+    icp += offsetof(struct ipp_hdr, attr_group);
+    *icp++ = TAG_OPERATION_ATTR;
+    /* Required attributes */
+    icp = add_option(icp, TAG_CHARSET, "attributes-charset", "utf-8");
+    icp = add_option(icp, TAG_NATULANG, "attributes-natural-language", "en-us");
+    sprintf(str, "http://%s/ipp", printer_name);
+    icp = add_option(icp, TAG_URI, "printer-uri", str);
+    /* Recommended attribute */
+    icp =
+        add_option(icp, TAG_NAMEWOLANG, "requesting-user-name", jp->req.usernm);
+    /* Optional attribute */
+    icp = add_option(icp, TAG_NAMEWOLANG, "job-name", jp->req.jobnm);
+    /* Document format attribute */
+    if (jp->req.flags & PR_TEXT) {
+      p = "text/plain";
+      extra = 1;
+    } else {
+      p = "application/postscript";
+      extra = 0;
+    }
+    icp = add_option(icp, TAG_MIMETYPE, "document-format", p);
+    *icp++ = TAG_END_OF_ATTR;
+    ilen = icp - ibuf; /* size of the IPP header */
+
+    /*
+     * Set up the HTTP header.
+     */
+    hcp = hbuf;
+    sprintf(hcp, "POST /ipp HTTP/1.1\r\n");
+    hcp += strlen(hcp);
+    sprintf(hcp, "Content-Length: %ld\r\n", (long)sbuf.st_size + ilen + extra);
+    hcp += strlen(hcp);
+    strcpy(hcp, "Content-Type: application/ipp\r\n");
+    hcp += strlen(hcp);
+    sprintf(hcp, "Host: %s:%d\r\n", printer_name, IPP_PORT);
+    hcp += strlen(hcp);
+    *hcp++ = '\r';
+    *hcp++ = '\n';
+    hlen = hcp - hbuf; /* size of the HTTP header */
+
+    /*
+     * Write the headers first.  Then send the file.
+     */
+    iov[0].iov_base = hbuf;
+    iov[0].iov_len = hlen;
+    iov[1].iov_base = ibuf;
+    iov[1].iov_len = ilen;
+    if (writev(sockfd, iov, 2) != hlen + ilen) {
+      log_ret("Can't write to printer");
+      goto defer;
+    }
+
+    if (jp->req.flags & PR_TEXT) {
+      /*
+       * Hack: Allow PostScript to be printed as plain text.  Sending a
+       * backspace as the first character defeats the printer's ability to
+       * autosense the file format, while not showing up in the printout.
+       */
+      if (write(sockfd, "\b", 1) != 1) {
+        log_ret("Can't write to printer");
+        goto defer;
+      }
+    }
+
+    /* Send data to be printed in IOBUFSZ chunks */
+    while ((nr = read(fd, buf, IOBUFSZ)) > 0) {
+      /* write() can send less than requestd amount of data; use writen() */
+      if ((nw = writen(sockfd, buf, nr)) != nr) {
+        if (nw < 0) {
+          log_ret("Can't write to printer");
+        } else {
+          log_msg("Short write (%d/%d) to printer", nw, nr);
+        }
+        goto defer;
+      }
+    }
+    if (nr < 0) {
+      log_ret("Can't read %s", name);
+      goto defer;
+    }
+
+    /*
+     * Read the response from the printer.
+     */
+    if (printer_status(sockfd, jp)) {
+      unlink(name);
+      sprintf(name, "%s/%s/%d", SPOOLDIR, REQDIR, jp->jobid);
+      unlink(name);
+      free(jp);
+      jp = NULL;
+    }
+  defer:
+    close(fd);
+    if (sockfd >= 0) {
+      close(sockfd);
+    }
+    if (jp != NULL) {
+      /*
+       * On error, jp points to the job strucutre for the job that is trying to
+       * be printed.  Place the job back on the head of the pending job list
+       * and delay for 1 minute.
+       */
+      replace_job(jp);
+      nanosleep(&ts, NULL);
+    }
+  }
+} /* printer_thread() */
+
+/**
+ * @brief      Read data from the printer, possibly increasing the buffer.
+ * @details    This function is used to read part of the response message from
+ *             the printer.
+ *
+ * @param[in]  sockfd  Socket file descriptor used to communicate with the
+ *                     printer.
+ * @param      bpp     Pointer to increased buffer starting address.
+ * @param[in]  off     Offset in buffer.
+ * @param      bszp    Pointer to size of increased buffer.
+ *
+ * @return     Returns the offset of the end of data in buffer on success; -1 on
+ *             failure.
+ */
+ssize_t readmore(int sockfd, char **bpp, int off, int *bszp) {
+  ssize_t nr;
+  char *bp = *bpp;
+  int bsz = *bszp;
+
+  if (off >= bsz) { /* At end of buffer; reallocate bigger buffer */
+    bsz += IOBUFSZ;
+    if ((bp = realloc(*bpp, bsz)) == NULL) {
+      log_sys("readmore(): Can't allocate bigger buffer");
+    }
+    *bszp = bsz; /* new buffer size */
+    *bpp = bp;   /* starting address of new buffer */
+  }
+  /*
+   * Read as much as the buffer will hold, starting at end of data already in
+   * buffer.  Return new end of data offset in the buffer; -1 on error or if
+   * timeout expires.
+   */
+  if ((nr = tread(sockfd, &bp[off], bsz - off, 1)) > 0) {
+    return (off + nr); /* success */
+  } else {
+    return (-1); /* error or timeout expired */
+  }
+} /* readmore() */
+
+/**
+ * @brief      Read and parse the response from the printer.
+ * @details    This function is used to read the printer's response to a print
+ *             job request. It is not known how the printer will respond; it may
+ *             send a response in multiple messages, send a complete response in
+ *             one message, or include intermediate acknowledgement, such as
+ *             HTTP 100 Continue messages. This function handles all of these
+ *             possibilities.
+ *
+ * @param[in]  sfd   Socket file descriptor used to communicate with the
+ * printer.
+ * @param      jp    Pointer to print job structure.
+ *
+ * @return     1 if the request was successful; 0 otherwise.
+ */
+int printer_status(int sfd, struct job *jp) {
+  int i, success, code, len, found, bufsz, datsz;
+  int32_t jobid;
+  ssize_t nr;
+  char *bp, *cp, *statcode, *reason, *contentlen;
+  struct ipp_hdr *hp;
+
+  /*
+   * Read the HTTP header followed by the IPP response header.  They can be
+   * returned in multiple read attempts.  Use the Content-Length specifier to
+   * determine how much to read.
+   */
+  success = 0; /* initialise with failure code */
+  bufsz = IOBUFSZ;
+  /* Allocate a buffer used to read response from printer */
+  if ((bp = malloc(IOBUFSZ)) == NULL) {
+    log_sys("printer_status(): Can't allocate read buffer");
+  }
+
+  /* Read from printer; expect response to be available within about 5 sec. */
+  while ((nr = tread(sfd, bp, bufsz, 5)) > 0) {
+    /*
+     * Find the status.  Response starts with "HTTP/x.y", so can skip the first
+     * 8 characters, and any white space that starts the message.
+     */
+    cp = bp + 8;
+    datsz = nr;
+    while (isspace((int)*cp)) {
+      cp++;
+    }
+    /* Status code should follow next; advance pointer to end of code. */
+    statcode = cp;
+    while (isdigit((int)*cp)) {
+      cp++;
+    }
+    if (cp == statcode) { /* Bad format; log it and move on */
+      log_msg(bp);
+    } else {
+      /* Convert first nondigit character following status code to null byte */
+      *cp++ = '\0';
+      /* Reason string should follow next */
+      reason = cp;
+      /* Search for terminating carriage return or line feed */
+      while (*cp != '\r' && *cp != '\n') {
+        cp++;
+      }
+      *cp = '\0'; /* terminate with null byte */
+      code = atoi(statcode);
+      if (HTTP_INFO(code)) { /* Ignore information messages; read more */
+        continue;
+      }
+      /* Expect to see either success or error message */
+      if (!HTTP_SUCCESS(code)) { /* Probable error: log it */
+        bp[datsz] = '\0';
+        log_msg("Error: %s", reason);
+        break;
+      }
+
+      /*
+       * HTTP request was OK, but still need to check IPP status.  Search for
+       * the Content-Length attribute.  HTTP header keywords are not case
+       * sensitive, so need to check both lower and uppercase characters.
+       */
+      i = cp - bp;
+      for (;;) {
+        while (*cp != 'C' && *cp != 'c' && i < datsz) {
+          cp++;
+          i++;
+        }
+        if (i >= datsz) { /* if insufficient buffer size; get more header */
+          if ((nr = readmore(sfd, &bp, i, &bufsz)) < 0) {
+            goto out;
+          } else {
+            cp = &bp[i];
+            datsz += nr;
+          }
+        }
+
+        /* Case insensitive comparison */
+        if (strncasecmp(cp, "Content-Length:", 15) == 0) {
+          cp += 15;
+          while (isspace((int)*cp)) { /* skip over white spaces */
+            cp++;
+          }
+          /* Read content length attribute value */
+          contentlen = cp;
+          while (isdigit((int)*cp)) { /* skip over value */
+            cp++;
+          }
+          *cp++ = '\0'; /* Null terminate */
+          i = cp - bp;
+          len = atoi(contentlen); /* convert numeric string to integer */
+          break;
+        } else { /* Comparison failed; continue searching byte by byte */
+          cp++;
+          i++;
+        }
+      }
+      if (i >= datsz) { /* get more header */
+        if ((nr = readmore(sfd, &bp, i, &bufsz)) < 0) {
+          goto out;
+        } else {
+          cp = &bp[i];
+          datsz += nr;
+        }
+      }
+
+      /* Search for end of HTTP header (a blank line) */
+      found = 0; /* HTTP header found flag */
+      while (!found) {
+        while (i < datsz - 2) {
+          if (*cp == '\n' && *(cp + 1) == '\r' && *(cp + 2) == '\n') {
+            found = 1; /* found HTTP header end */
+            cp += 3;
+            i += 3;
+            break;
+          }
+          cp++;
+          i++;
+        }
+        if (i >= datsz) { /* get more header */
+          if ((nr = readmore(sfd, &bp, i, &bufsz)) < 0) {
+            goto out;
+          } else {
+            cp = &bp[i];
+            datsz += nr;
+          }
+        }
+      }
+
+      if (datsz - i < len) { /* get more header */
+        if ((nr = readmore(sfd, &bp, i, &bufsz)) < 0) {
+          goto out;
+        } else {
+          cp = &bp[i];
+          datsz += nr;
+        }
+      }
+
+      hp = (struct ipp_hdr *)cp;
+      i = ntohs(hp->status);         /* convert to host byte order */
+      jobid = ntohl(hp->request_id); /* convert to host byte order */
+
+      if (jobid != jp->jobid) {
+        /*
+         * Different jobs.  Ignore it.
+         */
+        log_msg("jobid %d status code %d", jobid, i);
+        break;
+      }
+
+      if (STATCLASS_OK(i)) {
+        success = 1;
+      }
+      break;
+    }
+  }
+
+out:
+  free(bp);
+  if (nr < 0) {
+    log_msg("jobid %d: error reading printer response: %s", jobid,
+            strerror(errno));
+  }
+  return (success);
+} /* printer_status() */
