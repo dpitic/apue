@@ -13,7 +13,7 @@
  * Printer configuration file contains the host names of the printer spooling
  * daemon and the network attached printer.
  */
-#define CONFIG_FILE "./etc/printer.conf"
+#define CONFIG_FILE "/tmp/etc/printer.conf"
 /**
  * Directories used by the implementation must be created by an administrator
  * and be owned by the same user account under which the printer spooling daemon
@@ -22,7 +22,7 @@
  * /var/spool.  The daemon is designed to do as little as possible while running
  * as root to minimise the chance of creating a security hole.
  */
-#define SPOOLDIR "./var/spool/printer"
+#define SPOOLDIR "/tmp/var/spool/printer"
 /**
  * Directory that holds file containing next job number; appended to SPOOLDIR.
  */
