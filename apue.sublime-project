@@ -7,8 +7,16 @@
 	],
 	"settings":
 	{
-		// SublimeGDB commandline arguments
-		// "sublimegdb_arguments": ".."
+		// ---------------------------------------------------------------------
+		// SublimeGDB settings for project; prepend with sublimegdb_
+		// Generalised pattern for always using the current open file with an
+		// executable name as the current file.
+		"sublimegdb_workingdir": "${folder:${file}}",
+		// Arguments for the program
+		"sublimegdb_arguments": "",
+		// NOTE: You MUST provide --interpreter=mi for the plugin to work
+		"sublimegdb_commandline": "gdb --interpreter=mi --args ./${file_base_name}"
+		// ---------------------------------------------------------------------
 	},
 	"SublimeLinter":
 	{
@@ -18,11 +26,13 @@
 				"extra_flags": "-Wall -DLINUX -D_GNU_SOURCE",
 				"include_dirs": [
 					"/usr/include",
+					"/usr/lib64/clang/6.0.0/include",
 					"/usr/lib64/clang/5.0.1/include",
 					"/usr/lib/clang/5.0.1/include",
                 	"/usr/lib/clang/4.0.1/include",
 					"${project_path}/include",
-					"${project_path}/ch20"			// database library header
+					"${project_path}/ch20",			// database library header
+					"${project_path}/ch21"			// print library header
 				]
 			},
 			"gcc": {

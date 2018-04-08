@@ -24,6 +24,18 @@ void log_open(const char *ident, int option, int facility) {
 }
 
 /**
+ * Nonfatal error related to a system call.  Print a message with the system's
+ * errno value and return.
+ */
+void log_ret(const char *fmt, ...) {
+  va_list ap;
+
+  va_start(ap, fmt);
+  log_doit(1, errno, LOG_ERR, fmt, ap);
+  va_end(ap);
+}
+
+/**
  * Fatal error related to a system call.  Print a message and terminate.
  */
 void log_sys(const char *fmt, ...) {
@@ -55,6 +67,19 @@ void log_quit(const char *fmt, ...) {
 
   va_start(ap, fmt);
   log_doit(0, 0, LOG_ERR, fmt, ap);
+  va_end(ap);
+  exit(2);
+}
+
+/**
+ * Fatal error related to a system call.  Error number passed as an explicit
+ * parameter.  Print a message and terminate.
+ */
+void log_exit(int error, const char *fmt, ...) {
+  va_list ap;
+
+  va_start(ap, fmt);
+  log_doit(1, error, LOG_ERR, fmt, ap);
   va_end(ap);
   exit(2);
 }
