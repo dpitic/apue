@@ -38,10 +38,10 @@
 #define REQDIR "reqs"
 
 /* Define account name under which printer spooling daemon will run */
-#if defined(BSD)
+#if defined(BSD) || defined(LINUX)
 /*
- * BSD doesn't define a separate account for the printer spooling daemon,
- * therefore use the account reserved for system daemons.
+ * BSD and Linux doesn't define a separate account for the printer spooling
+ * daemon, therefore use the account reserved for system daemons.
  */
 #define LPNAME "daemon"
 #elif defined(MACOS)
