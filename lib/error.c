@@ -1,12 +1,12 @@
-#include "apue.h"
 #include <errno.h>  /* for definition of errno */
 #include <stdarg.h> /* ISO C variable arguments */
+#include "apue.h"
 
 static void err_doit(int, int, const char *, va_list);
 
 /*
- * Nonfatal error related to a system call.
- * Print a message and return.
+ * Nonfatal error related to a system call. Print a message and return.
+ * @param[in]  fmt        Variable length argument format specifier string.
  */
 void err_ret(const char *fmt, ...) {
   va_list ap;
@@ -17,8 +17,8 @@ void err_ret(const char *fmt, ...) {
 }
 
 /*
- * Fatal error related to a system call.
- * Print a message and terminate.
+ * Fatal error related to a system call. Print a message and terminate.
+ * @param[in]  fmt        Variable length argument format specifier string.
  */
 void err_sys(const char *fmt, ...) {
   va_list ap;
@@ -30,9 +30,10 @@ void err_sys(const char *fmt, ...) {
 }
 
 /*
- * Nonfatal error unrelated to a system call.
- * Error code passed as explicit parameter.
- * Print a message and return.
+ * Nonfatal error unrelated to a system call. Error code passed as explicit
+ * parameter. Print a message and return.
+ * @param[in]  error      Integer error code.
+ * @param[in]  fmt        Variable length argument format specifier string.
  */
 void err_cont(int error, const char *fmt, ...) {
   va_list ap;
@@ -43,9 +44,10 @@ void err_cont(int error, const char *fmt, ...) {
 }
 
 /*
- * Fatal error unrelated to a system call.
- * Error code passed as explicit parameter.
- * Print a message and terminate.
+ * Fatal error unrelated to a system call. Error code passed as explicit
+ * parameter. Print a message and terminate.
+ * @param[in]  error      Integer error code.
+ * @param[in]  fmt        Variable length argument format specifier string.
  */
 void err_exit(int error, const char *fmt, ...) {
   va_list ap;
@@ -57,8 +59,9 @@ void err_exit(int error, const char *fmt, ...) {
 }
 
 /*
- * Fatal error related to a system call.
- * Print a message, dump core, and terminate.
+ * Fatal error related to a system call. Print a message, dump core, and
+ * terminate.
+ * @param[in]  fmt        Variable length argument format specifier string.
  */
 void err_dump(const char *fmt, ...) {
   va_list ap;
@@ -71,8 +74,8 @@ void err_dump(const char *fmt, ...) {
 }
 
 /*
- * Nonfatal error unrelated to a system call.
- * Print a message and return.
+ * Nonfatal error unrelated to a system call. Print a message and return.
+ * @param[in]  fmt        Variable length argument format specifier string.
  */
 void err_msg(const char *fmt, ...) {
   va_list ap;
@@ -83,8 +86,8 @@ void err_msg(const char *fmt, ...) {
 }
 
 /*
- * Fatal error unrelated to a system call.
- * Print a message and terminate.
+ * Fatal error unrelated to a system call. Print a message and terminate.
+ * @param[in]  fmt        Variable length argument format specifier string.
  */
 void err_quit(const char *fmt, ...) {
   va_list ap;
@@ -96,8 +99,12 @@ void err_quit(const char *fmt, ...) {
 }
 
 /*
- * Print a message and return to the caller.
- * Caller specifies errnoflag.
+ * Print a message and return to the caller. Caller specifies errnoflag.
+ * @param[in]  errnoflag  Flag used to specify if errno is set. 0 = errno not
+ *                        set; otherwise errno set.
+ * @param[in]  error      Error number integer passed to strerror().
+ * @param[in]  fmt        Variable length argument format specifier string.
+ * @param[in]  ap         Variable argument list pointer.
  */
 static void err_doit(int errnoflag, int error, const char *fmt, va_list ap) {
   char buf[MAXLINE];
